@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/halm4d/arbitragecli/app"
-	"github.com/halm4d/arbitragecli/args"
+	"github.com/halm4d/arbitragecli/constants"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -25,9 +25,9 @@ func Execute() {
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.PersistentFlags().BoolVarP(&args.Verbose, "verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().Float64VarP(&args.Fee, "fee", "f", .75, "fee")
-	rootCmd.PersistentFlags().Float64VarP(&args.BasePrice, "base-price", "b", 100, "base price")
+	rootCmd.PersistentFlags().BoolVarP(&constants.Verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().Float64VarP(&constants.Fee, "fee", "f", .75, "fee")
+	rootCmd.PersistentFlags().Float64VarP(&constants.BasePrice, "base-price", "b", 100, "base price")
 }
 
 var versionCmd = &cobra.Command{

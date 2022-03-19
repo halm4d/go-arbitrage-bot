@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"github.com/halm4d/arbitragecli/constants"
 	"sort"
 	"strings"
 )
@@ -22,7 +23,6 @@ type Trade struct {
 	From   string
 	To     string
 	Symbol string
-	Price  float64
 	Type   Type
 }
 
@@ -39,8 +39,8 @@ type Trade struct {
 // 	ETH -> LTC -> BTC -> ETH
 // 	ETH -> BTC -> LTC -> ETH
 
-func CalculateAllRoutes(symbols Symbols, busdSymbols Symbols) RoutesWithProfit {
-	var routeWithProfits RoutesWithProfit
+func CalculateAllRoutes(symbols Symbols) Routes {
+	var routes Routes
 	for _, startEndAsset := range AllCryptoCurrency() { // BTC ->
 		for _, asset1 := range symbols.findAllByAsset(startEndAsset) { // BTC -> ETH ->
 			var targetAsset1 = getTargetAsset(asset1, startEndAsset)
@@ -49,7 +49,7 @@ func CalculateAllRoutes(symbols Symbols, busdSymbols Symbols) RoutesWithProfit {
 				if targetAsset2 == startEndAsset {
 					continue
 				}
-				pair, err := symbols.findByAssetPairs(targetAsset2, startEndAsset)
+				pair, err := symbols.findByAssetPair(targetAsset2, startEndAsset)
 				if err != nil {
 					continue
 				}
@@ -58,33 +58,55 @@ func CalculateAllRoutes(symbols Symbols, busdSymbols Symbols) RoutesWithProfit {
 						From:   startEndAsset,
 						To:     targetAsset1,
 						Symbol: asset1.Symbol,
-						Price:  asset1.Price,
 						Type:   Buy,
 					},
 					{
 						From:   targetAsset1,
 						To:     targetAsset2,
 						Symbol: asset2.Symbol,
-						Price:  asset2.Price,
 						Type:   Buy,
 					},
 					{
 						From:   targetAsset2,
 						To:     startEndAsset,
 						Symbol: pair.Symbol,
-						Price:  pair.Price,
 						Type:   0,
 					},
 				}
-				profit, err := trades.calculateProfit(symbols, busdSymbols)
-				if err != nil {
-					continue
-				}
-				routeWithProfits = append(routeWithProfits, profit)
+				routes = append(routes, trades)
 			}
 		}
 	}
-	return routeWithProfits
+	return routes
+}
+
+func (r Routes) getProfitableRoutes(symbols Symbols, usdtSymbols Symbols) (RoutesWithProfit, RoutesWithProfit) {
+	var profitableRoutes RoutesWithProfit
+	var routesWithLoss RoutesWithProfit
+	for _, trades := range r {
+		profit, err := trades.calculateProfit(symbols, usdtSymbols)
+		if err != nil {
+			continue
+		}
+		if profit.Profit > 0 {
+			profitableRoutes = append(profitableRoutes, RouteWithProfit{
+				Trades: trades,
+				Profit: profit.Profit,
+			})
+		} else {
+			routesWithLoss = append(routesWithLoss, RouteWithProfit{
+				Trades: trades,
+				Profit: profit.Profit,
+			})
+		}
+	}
+	sort.Slice(profitableRoutes, func(i, j int) bool {
+		return profitableRoutes[i].Profit > profitableRoutes[j].Profit
+	})
+	sort.Slice(routesWithLoss, func(i, j int) bool {
+		return routesWithLoss[i].Profit > routesWithLoss[j].Profit
+	})
+	return profitableRoutes, routesWithLoss
 }
 
 func getTargetAsset(symbol Symbol, ignore string) string {
@@ -129,75 +151,40 @@ type RouteWithProfit struct {
 	Profit float64
 }
 
-func (t Trades) calculateProfit(symbols Symbols, busdSymbols Symbols) (RouteWithProfit, error) {
+func (t Trades) calculateProfit(symbols Symbols, usdtSymbols Symbols) (RouteWithProfit, error) {
 	baseBudget := 100.0
 	var previousPrice = baseBudget
 	for i, trade := range t {
 		if i == 0 {
-			busdSymbol, err := busdSymbols.findByAssetPairs("BUSD", trade.From)
+			usdtSymbols, err := usdtSymbols.findByAssetPair(constants.USDT, trade.From)
 			if err != nil {
 				return RouteWithProfit{}, err
 			}
-			previousPrice = convertPrice(busdSymbol, previousPrice, "BUSD", trade.From)
+			previousPrice = convertPrice(usdtSymbols, previousPrice, constants.USDT, trade.From)
 		}
-		symbol, err := symbols.findByAssetPairs(trade.From, trade.To)
+		symbol, err := symbols.findByAssetPair(trade.From, trade.To)
 		if err != nil {
 			return RouteWithProfit{}, err
 		}
 		previousPrice = convertPrice(symbol, previousPrice, trade.From, trade.To)
 
 		if i+1 == len(t) {
-			busdSymbol, err := busdSymbols.findByAssetPairs(trade.To, "BUSD")
+			usdtSymbols, err := usdtSymbols.findByAssetPair(trade.To, constants.USDT)
 			if err != nil {
 				return RouteWithProfit{}, err
 			}
-			previousPrice = convertPrice(busdSymbol, previousPrice, trade.To, "BUSD")
+			previousPrice = convertPrice(usdtSymbols, previousPrice, trade.To, constants.USDT)
 			return RouteWithProfit{
 				Trades: t,
-				Profit: previousPrice - baseBudget,
+				Profit: previousPrice - 3 - baseBudget,
 			}, nil
 		}
 	}
 	return RouteWithProfit{}, errors.New("cannot calculate price")
 }
 
-//func (r Routes) CalculateProfits(symbols Symbols, busdSymbols Symbols) []RouteWithProfit {
-//	var routesWithProfit []RouteWithProfit
-//	for _, trades := range r {
-//		var previousPrice = 100.0
-//		for i, trade := range trades {
-//			if i == 0 {
-//				busdSymbol, err := busdSymbols.findByAssetPairs("BUSD", trade.From)
-//				if err != nil {
-//					break
-//				}
-//				previousPrice = convertPrice(busdSymbol, previousPrice, "BUSD", trade.From)
-//			}
-//			symbol, err := symbols.findByAssetPairs(trade.From, trade.To)
-//			if err != nil {
-//				break
-//			}
-//			previousPrice = convertPrice(symbol, previousPrice, trade.From, trade.To)
-//
-//			if i+1 == len(trades) {
-//				busdSymbol, err := busdSymbols.findByAssetPairs(trade.To, "BUSD")
-//				if err != nil {
-//					break
-//				}
-//				previousPrice = convertPrice(busdSymbol, previousPrice, trade.To, "BUSD")
-//
-//				routesWithProfit = append(routesWithProfit, RouteWithProfit{
-//					Trades: trades,
-//					Profit: previousPrice,
-//				})
-//			}
-//		}
-//	}
-//	return routesWithProfit
-//}
-
 func convertPrice(symbol Symbol, basePrice float64, from string, to string) float64 {
-	fee := 1 - 0.75/100
+	fee := 1 - (0.075 / 100)
 	if strings.EqualFold(symbol.BaseAsset, from) && strings.EqualFold(symbol.QuoteAsset, to) {
 		return symbol.Price * basePrice * fee
 	} else {

@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"github.com/halm4d/arbitragecli/color"
+	"time"
 )
 
 func Run() {
@@ -27,7 +29,7 @@ func Run() {
 	//	Symbol{Symbol: "LTCETH", BaseAsset: "LTC", QuoteAsset: "ETH"},
 	//	Symbol{Symbol: "LTCBTC", BaseAsset: "LTC", QuoteAsset: "BTC"},
 	//}
-	//busdSymbols := Symbols{
+	//usdtSymbols := Symbols{
 	//	Symbol{
 	//		Symbol:     "BTCBUSD",
 	//		BaseAsset:  "BTC",
@@ -45,18 +47,30 @@ func Run() {
 	//	},
 	//}
 	//symbols.updatePrices()
-	//busdSymbols.updatePrices()
+	//usdtSymbols.updatePrices()
 
-	symbols, busdSymbols := NewSymbols()
+	symbols, usdtSymbols := NewSymbols()
 	fmt.Println(len(symbols))
-	fmt.Println(len(busdSymbols))
+	fmt.Println(len(usdtSymbols))
 
-	routes := CalculateAllRoutes(symbols, busdSymbols)
-	fmt.Println(len(routes))
-	routes.print(50)
+	routes := CalculateAllRoutes(symbols)
+	fmt.Printf("Found routes: %v\n", len(routes))
 
-	//for _, profit := range routes.CalculateProfits(testSymbols, busdSymbols) {
-	//	fmt.Printf("%+v\n", profit)
-	//}
+	for {
+		symbols.updatePrices()
+		usdtSymbols.updatePrices()
+
+		profitableRoutes, lossedRoutes := routes.getProfitableRoutes(symbols, usdtSymbols)
+		if len(profitableRoutes) != 0 {
+			fmt.Printf("%sFound profitable routes: %v\n", color.Green, len(profitableRoutes))
+			profitableRoutes.print(10)
+		} else {
+			fmt.Printf("%sProfitable route not found.\n", color.Red)
+			lossedRoutes.print(2)
+		}
+
+		fmt.Printf("%sTime: %s\n", color.Reset, time.Now())
+		time.Sleep(time.Second * 1)
+	}
 
 }

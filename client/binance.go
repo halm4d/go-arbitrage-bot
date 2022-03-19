@@ -2,7 +2,6 @@ package client
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/halm4d/arbitragecli/error"
 	"io"
 	"io/ioutil"
@@ -13,17 +12,13 @@ import (
 var client = &http.Client{Timeout: 10 * time.Second}
 
 func GetPrices(rc chan *[]TickerPriceResp) {
-	fmt.Println("Requesting prices...")
-	var target []TickerPriceResp = Get[[]TickerPriceResp]("https://api.binance.com/api/v3/ticker/price")
+	var target = Get[[]TickerPriceResp]("https://api.binance.com/api/v3/ticker/price")
 	rc <- &target
-	fmt.Println("Requesting prices done.")
 }
 
 func GetExchangeInfo(rc chan *[]SymbolResp) {
-	fmt.Println("Requesting exchange info...")
-	var target exchangeInfoResp = Get[exchangeInfoResp]("https://api.binance.com/api/v3/exchangeInfo")
+	var target = Get[exchangeInfoResp]("https://api.binance.com/api/v3/exchangeInfo")
 	rc <- &target.Symbols
-	fmt.Println("Requesting exchange info done.")
 }
 
 func Get[T any](url string) T {
@@ -60,6 +55,7 @@ type SymbolResp struct {
 	Symbol     string `json:"symbol"`
 	BaseAsset  string `json:"baseAsset"`
 	QuoteAsset string `json:"quoteAsset"`
+	Status     string `json:"status"`
 }
 
 type exchangeInfoResp struct {
