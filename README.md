@@ -1,6 +1,7 @@
 # go-arbitrage-bot
 
 ## Help
+```
 Usage:
   arbcli [flags]
   arbcli [command]
@@ -18,3 +19,4 @@ Flags:
       --version            version for arbcli
 
 Use "arbcli [command] --help" for more information about a command.
+```
