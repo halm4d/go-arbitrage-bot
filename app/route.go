@@ -6,6 +6,8 @@ import (
 	"github.com/halm4d/arbitragecli/constants"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 )
 
 const (
@@ -26,86 +28,112 @@ type Trade struct {
 	Type   Type
 }
 
-//  Symbols{
-// 		Symbol{Symbol: "ETHBTC", BaseAsset: "ETH", QuoteAsset: "BTC"},
-// 		Symbol{Symbol: "LTCETH", BaseAsset: "LTC", QuoteAsset: "ETH"},
-// 		Symbol{Symbol: "LTCBTC", BaseAsset: "LTC", QuoteAsset: "BTC"},
-//  }
-
-// 	BTC -> ETH -> LTC -> BTC
-// 	BTC -> LTC -> ETH -> BTC
-// 	LTC -> BTC -> ETH -> LTC
-// 	LTC -> ETH -> BTC -> LTC
-// 	ETH -> LTC -> BTC -> ETH
-// 	ETH -> BTC -> LTC -> ETH
-
 func CalculateAllRoutes(symbols Symbols) Routes {
+	startCalculationTime := time.Now()
+	var routes = make(Routes, 0)
+
+	var wg sync.WaitGroup
+	mu := &sync.Mutex{}
+	for _, startEndAsset := range AllCryptoCurrency() {
+		wg.Add(1)
+		go func(symbols Symbols, startEndAsset string) {
+			defer wg.Done()
+			OneOfMyStructs := calculateRoutesForSymbol(symbols, startEndAsset)
+			mu.Lock()
+			routes = append(routes, OneOfMyStructs...)
+			mu.Unlock()
+		}(symbols, startEndAsset)
+	}
+	wg.Wait()
+	endCalculationTime := time.Now()
+	fmt.Println(endCalculationTime.UnixMilli() - startCalculationTime.UnixMilli())
+	return routes
+}
+
+func calculateRoutesForSymbol(symbols Symbols, startEndAsset string) Routes {
 	var routes Routes
-	for _, startEndAsset := range AllCryptoCurrency() { // BTC ->
-		for _, asset1 := range symbols.findAllByAsset(startEndAsset) { // BTC -> ETH ->
-			var targetAsset1 = getTargetAsset(asset1, startEndAsset)
-			for _, asset2 := range symbols.findAllByAsset(targetAsset1) { // BTC -> ETH -> LTC ->
-				targetAsset2 := getTargetAsset(asset2, targetAsset1)
-				if targetAsset2 == startEndAsset {
-					continue
-				}
-				pair, err := symbols.findByAssetPair(targetAsset2, startEndAsset)
-				if err != nil {
-					continue
-				}
-				trades := Trades{
-					{
-						From:   startEndAsset,
-						To:     targetAsset1,
-						Symbol: asset1.Symbol,
-						Type:   Buy,
-					},
-					{
-						From:   targetAsset1,
-						To:     targetAsset2,
-						Symbol: asset2.Symbol,
-						Type:   Buy,
-					},
-					{
-						From:   targetAsset2,
-						To:     startEndAsset,
-						Symbol: pair.Symbol,
-						Type:   0,
-					},
-				}
-				routes = append(routes, trades)
+	for _, asset1 := range symbols.findAllByAsset(startEndAsset) {
+		var targetAsset1 = getTargetAsset(asset1, startEndAsset)
+		for _, asset2 := range symbols.findAllByAsset(targetAsset1) {
+			targetAsset2 := getTargetAsset(asset2, targetAsset1)
+			if targetAsset2 == startEndAsset {
+				continue
 			}
+			pair, err := symbols.findByAssetPair(targetAsset2, startEndAsset)
+			if err != nil {
+				continue
+			}
+			trades := Trades{
+				{
+					From:   startEndAsset,
+					To:     targetAsset1,
+					Symbol: asset1.Symbol,
+				},
+				{
+					From:   targetAsset1,
+					To:     targetAsset2,
+					Symbol: asset2.Symbol,
+				},
+				{
+					From:   targetAsset2,
+					To:     startEndAsset,
+					Symbol: pair.Symbol,
+				},
+			}
+			routes = append(routes, trades)
 		}
 	}
 	return routes
 }
 
 func (r Routes) getProfitableRoutes(symbols Symbols, usdtSymbols Symbols) (RoutesWithProfit, RoutesWithProfit) {
-	var profitableRoutes RoutesWithProfit
-	var routesWithLoss RoutesWithProfit
+	var profitableRoutes = make(RoutesWithProfit, 0)
+	var routesWithLoss = make(RoutesWithProfit, 0)
+
+	var wg sync.WaitGroup
+	mu := &sync.Mutex{}
+
 	for _, trades := range r {
-		profit, err := trades.calculateProfit(symbols, usdtSymbols)
-		if err != nil {
-			continue
-		}
-		if profit.Profit > 0 {
-			profitableRoutes = append(profitableRoutes, RouteWithProfit{
-				Trades: trades,
-				Profit: profit.Profit,
-			})
-		} else {
-			routesWithLoss = append(routesWithLoss, RouteWithProfit{
-				Trades: trades,
-				Profit: profit.Profit,
-			})
-		}
+		wg.Add(1)
+		go func(trades Trades, symbols Symbols, usdtSymbols Symbols) {
+			defer wg.Done()
+			profit, err := trades.calculateProfit(symbols, usdtSymbols)
+			if err != nil {
+				return
+			}
+			if profit.Profit > 0 {
+				mu.Lock()
+				profitableRoutes = append(profitableRoutes, RouteWithProfit{
+					Trades: trades,
+					Profit: profit.Profit,
+				})
+				mu.Unlock()
+			} else {
+				mu.Lock()
+				routesWithLoss = append(routesWithLoss, RouteWithProfit{
+					Trades: trades,
+					Profit: profit.Profit,
+				})
+				mu.Unlock()
+			}
+		}(trades, symbols, usdtSymbols)
 	}
-	sort.Slice(profitableRoutes, func(i, j int) bool {
-		return profitableRoutes[i].Profit > profitableRoutes[j].Profit
-	})
-	sort.Slice(routesWithLoss, func(i, j int) bool {
-		return routesWithLoss[i].Profit > routesWithLoss[j].Profit
-	})
+	wg.Wait()
+
+	wg.Add(2)
+	go func(profitableRoutes RoutesWithProfit) {
+		defer wg.Done()
+		sort.Slice(profitableRoutes, func(i, j int) bool {
+			return profitableRoutes[i].Profit > profitableRoutes[j].Profit
+		})
+	}(profitableRoutes)
+	go func(routesWithLoss RoutesWithProfit) {
+		defer wg.Done()
+		sort.Slice(routesWithLoss, func(i, j int) bool {
+			return routesWithLoss[i].Profit > routesWithLoss[j].Profit
+		})
+	}(routesWithLoss)
+	wg.Wait()
 	return profitableRoutes, routesWithLoss
 }
 
@@ -119,16 +147,16 @@ func getTargetAsset(symbol Symbol, ignore string) string {
 	return targetAsset2
 }
 
-func (r RouteWithProfit) getRouteString() string {
+func (t RouteWithProfit) getRouteString() string {
 	var readableTrade string
-	for i, trade := range r.Trades {
+	for i, trade := range t.Trades {
 		if i == 0 {
 			readableTrade = fmt.Sprintf("%s %s -> %s", readableTrade, trade.From, trade.To)
 		} else {
 			readableTrade = fmt.Sprintf("%s -> %s", readableTrade, trade.To)
 		}
 	}
-	return fmt.Sprintf("%s Profit: %f USD", readableTrade, r.Profit)
+	return fmt.Sprintf("%s Profit: %f USD", readableTrade, t.Profit)
 }
 
 func (t RouteWithProfit) print() {
@@ -140,7 +168,7 @@ func (t RouteWithProfit) print() {
 			readableTrade = fmt.Sprintf("%s -> %s", readableTrade, trade.To)
 		}
 	}
-	fmt.Printf("%s Profit: %f USD", readableTrade, t.Profit)
+	fmt.Printf("%s Profit: %f USD\n", readableTrade, t.Profit)
 }
 
 func (r RoutesWithProfit) getBestRouteString() string {
