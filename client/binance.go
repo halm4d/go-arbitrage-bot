@@ -2,7 +2,6 @@ package client
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/halm4d/arbitragecli/error"
 	"io"
 	"io/ioutil"
@@ -18,10 +17,8 @@ func GetPrices(rc chan *[]TickerPriceResp) {
 }
 
 func GetExchangeInfo(rc chan *[]SymbolResp) {
-	fmt.Println("Requesting exchangeinfo endpoint.")
 	var target = Get[ExchangeInfoResp]("https://api.binance.com/api/v3/exchangeInfo")
 	rc <- &target.Symbols
-	fmt.Println("Got response from exchangeinfo endpoint")
 }
 
 func Get[T any](url string) T {

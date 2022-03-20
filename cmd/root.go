@@ -26,7 +26,7 @@ func Execute() {
 func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.PersistentFlags().BoolVarP(&constants.Verbose, "verbose", "v", false, "verbose output")
-	rootCmd.PersistentFlags().Float64VarP(&constants.Fee, "fee", "f", .75, "fee")
+	rootCmd.PersistentFlags().Float64VarP(&constants.Fee, "fee", "f", .075, "fee")
 	rootCmd.PersistentFlags().Float64VarP(&constants.BasePrice, "base-price", "b", 100, "base price")
 }
 

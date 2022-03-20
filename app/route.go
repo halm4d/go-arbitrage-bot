@@ -119,6 +119,18 @@ func getTargetAsset(symbol Symbol, ignore string) string {
 	return targetAsset2
 }
 
+func (r RouteWithProfit) getRouteString() string {
+	var readableTrade string
+	for i, trade := range r.Trades {
+		if i == 0 {
+			readableTrade = fmt.Sprintf("%s %s -> %s", readableTrade, trade.From, trade.To)
+		} else {
+			readableTrade = fmt.Sprintf("%s -> %s", readableTrade, trade.To)
+		}
+	}
+	return fmt.Sprintf("%s Profit: %f USD", readableTrade, r.Profit)
+}
+
 func (t RouteWithProfit) print() {
 	var readableTrade string
 	for i, trade := range t.Trades {
@@ -128,7 +140,14 @@ func (t RouteWithProfit) print() {
 			readableTrade = fmt.Sprintf("%s -> %s", readableTrade, trade.To)
 		}
 	}
-	fmt.Printf("%s Profit: %f USD\n", readableTrade, t.Profit)
+	fmt.Printf("%s Profit: %f USD", readableTrade, t.Profit)
+}
+
+func (r RoutesWithProfit) getBestRouteString() string {
+	sort.Slice(r, func(i, j int) bool {
+		return r[i].Profit > r[j].Profit
+	})
+	return r[0].getRouteString()
 }
 
 func (r RoutesWithProfit) print(top int) {
@@ -152,7 +171,7 @@ type RouteWithProfit struct {
 }
 
 func (t Trades) calculateProfit(symbols Symbols, usdtSymbols Symbols) (RouteWithProfit, error) {
-	baseBudget := 100.0
+	baseBudget := constants.BasePrice
 	var previousPrice = baseBudget
 	for i, trade := range t {
 		if i == 0 {
@@ -166,7 +185,7 @@ func (t Trades) calculateProfit(symbols Symbols, usdtSymbols Symbols) (RouteWith
 		if err != nil {
 			return RouteWithProfit{}, err
 		}
-		previousPrice = convertPrice(symbol, previousPrice, trade.From, trade.To, 0.075)
+		previousPrice = convertPrice(symbol, previousPrice, trade.From, trade.To, constants.Fee)
 
 		if i+1 == len(t) {
 			usdtSymbols, err := usdtSymbols.findByAssetPair(trade.To, constants.USDT)

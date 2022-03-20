@@ -3,14 +3,14 @@ package app
 import (
 	"fmt"
 	"github.com/halm4d/arbitragecli/color"
+	"github.com/halm4d/arbitragecli/constants"
 	"time"
 )
 
 func Run() {
-	fmt.Printf("Calculating possible routes...")
+	fmt.Printf("Running arbbot with Fee: %v, BasePrice: %v, Verbose: %v\n", constants.Fee, constants.BasePrice, constants.Verbose)
+	fmt.Printf("Calculating possible routes...\n")
 	symbols, usdtSymbols := NewSymbols()
-	fmt.Println(len(symbols))
-	fmt.Println(len(usdtSymbols))
 
 	routes := CalculateAllRoutes(symbols)
 	fmt.Printf("Found routes: %v\n", len(routes))
@@ -20,14 +20,26 @@ func Run() {
 		usdtSymbols.updatePrices()
 
 		startOfCalculation := time.Now()
-		profitableRoutes, lossedRoutes := routes.getProfitableRoutes(symbols, usdtSymbols)
+		profitableRoutes, loosedRoutes := routes.getProfitableRoutes(symbols, usdtSymbols)
 		endOfCalculation := time.Now()
-		if len(profitableRoutes) != 0 {
-			fmt.Printf("%sFound profitable routes: %v\n", color.Green, len(profitableRoutes))
-			profitableRoutes.print(10)
+		lenOfProfitableRoutes := len(profitableRoutes)
+
+		if constants.Verbose {
+			if lenOfProfitableRoutes != 0 {
+				fmt.Printf("%sFound profitable routes: %v\n", color.Green, lenOfProfitableRoutes)
+				fmt.Printf("%sBest possible routes: \n", color.Green)
+				profitableRoutes.print(10)
+			} else {
+				fmt.Printf("%sProfitable route not found yet. Best possible route was: %s\n", color.Red, loosedRoutes.getBestRouteString())
+				loosedRoutes.print(10)
+			}
 		} else {
-			fmt.Printf("%sProfitable route not found.\n", color.Red)
-			lossedRoutes.print(2)
+			if lenOfProfitableRoutes != 0 {
+				fmt.Printf("%sFound profitable routes: %v\n", color.Green, lenOfProfitableRoutes)
+				fmt.Printf("%sBest possible route was: %s\n", color.Green, profitableRoutes.getBestRouteString())
+			} else {
+				fmt.Printf("%sProfitable route not found yet. Best possible route was: %s\n", color.Red, loosedRoutes.getBestRouteString())
+			}
 		}
 
 		fmt.Printf("%sCalculation time: %v ms\n", color.Cyan, endOfCalculation.UnixMilli()-startOfCalculation.UnixMilli())
