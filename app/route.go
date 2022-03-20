@@ -160,34 +160,33 @@ func (t Trades) calculateProfit(symbols Symbols, usdtSymbols Symbols) (RouteWith
 			if err != nil {
 				return RouteWithProfit{}, err
 			}
-			previousPrice = convertPrice(usdtSymbols, previousPrice, constants.USDT, trade.From)
+			previousPrice = convertPrice(usdtSymbols, previousPrice, constants.USDT, trade.From, 0)
 		}
 		symbol, err := symbols.findByAssetPair(trade.From, trade.To)
 		if err != nil {
 			return RouteWithProfit{}, err
 		}
-		previousPrice = convertPrice(symbol, previousPrice, trade.From, trade.To)
+		previousPrice = convertPrice(symbol, previousPrice, trade.From, trade.To, 0.075)
 
 		if i+1 == len(t) {
 			usdtSymbols, err := usdtSymbols.findByAssetPair(trade.To, constants.USDT)
 			if err != nil {
 				return RouteWithProfit{}, err
 			}
-			previousPrice = convertPrice(usdtSymbols, previousPrice, trade.To, constants.USDT)
+			previousPrice = convertPrice(usdtSymbols, previousPrice, trade.To, constants.USDT, 0)
 			return RouteWithProfit{
 				Trades: t,
-				Profit: previousPrice - 3 - baseBudget,
+				Profit: previousPrice - baseBudget,
 			}, nil
 		}
 	}
 	return RouteWithProfit{}, errors.New("cannot calculate price")
 }
 
-func convertPrice(symbol Symbol, basePrice float64, from string, to string) float64 {
-	fee := 1 - (0.075 / 100)
-	if strings.EqualFold(symbol.BaseAsset, from) && strings.EqualFold(symbol.QuoteAsset, to) {
-		return symbol.Price * basePrice * fee
-	} else {
-		return (1 / symbol.Price) * basePrice * fee
+func convertPrice(symbol Symbol, basePrice float64, from string, to string, fee float64) float64 {
+	if strings.EqualFold(symbol.BaseAsset, from) && strings.EqualFold(symbol.QuoteAsset, to) { // SELL
+		return symbol.BidPrice * basePrice * (1 - (fee / 100))
+	} else { // BUY
+		return (1 / symbol.AskPrice) * basePrice * (1 - (fee / 100))
 	}
 }
