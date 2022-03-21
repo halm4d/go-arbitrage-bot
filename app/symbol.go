@@ -7,6 +7,7 @@ import (
 	"github.com/halm4d/arbitragecli/util"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 func AllCryptoCurrency() []string {
@@ -27,7 +28,7 @@ type Symbol struct {
 	AskPrice float64
 }
 
-func NewSymbols() (Symbols, Symbols) {
+func NewSymbols() (*Symbols, *Symbols) {
 	prices := make(chan *[]client.TickerPriceResp)
 	exchange := make(chan *[]client.SymbolResp)
 
@@ -74,7 +75,7 @@ func NewSymbols() (Symbols, Symbols) {
 	sort.Slice(usdtSymbols, func(i, j int) bool {
 		return usdtSymbols[i].Symbol < usdtSymbols[j].Symbol
 	})
-	return symbols, usdtSymbols
+	return &symbols, &usdtSymbols
 }
 
 func (s Symbols) updatePrices() {
@@ -93,40 +94,62 @@ func (s Symbols) updatePrices() {
 	}
 }
 
-func (s Symbols) findBySymbol(target string) (Symbol, error) {
-	for _, symbol := range s {
+func (s *Symbols) findBySymbol(target string) (*Symbol, error) {
+	for _, symbol := range *s {
 		if symbol.Symbol == target {
-			return symbol, nil
+			return &symbol, nil
 		}
 	}
-	return Symbol{Symbol: "", BaseAsset: "", QuoteAsset: "", BidPrice: -1, AskPrice: -1}, errors.New("target symbol not found")
+	return &Symbol{Symbol: "", BaseAsset: "", QuoteAsset: "", BidPrice: -1, AskPrice: -1}, errors.New("target symbol not found")
 }
 
-func (s Symbols) findAllByAsset(asset string) Symbols {
+func (s *Symbols) findAllByAsset(asset string) *Symbols {
 	var symbols Symbols
-	for _, symbol := range s {
+	for _, symbol := range *s {
 		if symbol.BaseAsset == asset || symbol.QuoteAsset == asset {
 			symbols = append(symbols, symbol)
 		}
 	}
-	return symbols
+	return &symbols
 }
 
-func (s Symbols) findAllByAssets(asset1 string, asset2 string) Symbols {
+func (s *Symbols) findAllByAssets(asset1 string, asset2 string) *Symbols {
 	var symbols Symbols
-	for _, symbol := range s {
+	for _, symbol := range *s {
 		if symbol.BaseAsset == asset1 || symbol.QuoteAsset == asset1 || symbol.BaseAsset == asset2 || symbol.QuoteAsset == asset2 {
 			symbols = append(symbols, symbol)
 		}
 	}
-	return symbols
+	return &symbols
 }
 
-func (s Symbols) findByAssetPair(asset1 string, asset2 string) (Symbol, error) {
-	for _, symbol := range s {
+func (s *Symbols) findByAssetPair(asset1 string, asset2 string) (*Symbol, error) {
+	for _, symbol := range *s {
 		if (symbol.BaseAsset == asset1 || symbol.QuoteAsset == asset1) && (symbol.BaseAsset == asset2 || symbol.QuoteAsset == asset2) {
-			return symbol, nil
+			return &symbol, nil
 		}
 	}
-	return Symbol{}, errors.New("symbol not found")
+	return &Symbol{}, errors.New("symbol not found")
+}
+
+func (s *Symbol) getTargetAsset(ignore string) string {
+	var targetAsset2 string
+	if s.QuoteAsset != ignore {
+		targetAsset2 = s.QuoteAsset
+	} else {
+		targetAsset2 = s.BaseAsset
+	}
+	return targetAsset2
+}
+
+func (s *Symbol) convertPrice(basePrice float64, from string, to string, addFee bool) float64 {
+	fee := .0
+	if addFee {
+		fee = constants.Fee
+	}
+	if strings.EqualFold(s.BaseAsset, from) && strings.EqualFold(s.QuoteAsset, to) { // SELL
+		return s.BidPrice * basePrice * (1 - (fee / 100))
+	} else {
+		return (1 / s.AskPrice) * basePrice * (1 - (fee / 100))
+	}
 }

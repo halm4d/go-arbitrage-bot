@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/halm4d/arbitragecli/constants"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
@@ -18,17 +17,8 @@ const (
 type Type int8
 
 type Routes []Trades
-type Trades []Trade
-type RoutesWithProfit []RouteWithProfit
 
-type Trade struct {
-	From   string
-	To     string
-	Symbol string
-	Type   Type
-}
-
-func CalculateAllRoutes(symbols Symbols) Routes {
+func (s *Symbols) CalculateAllRoutes() *Routes {
 	startCalculationTime := time.Now()
 	var routes = make(Routes, 0)
 
@@ -36,30 +26,30 @@ func CalculateAllRoutes(symbols Symbols) Routes {
 	mu := &sync.Mutex{}
 	for _, startEndAsset := range AllCryptoCurrency() {
 		wg.Add(1)
-		go func(symbols Symbols, startEndAsset string) {
+		go func(symbols *Symbols, startEndAsset string) {
 			defer wg.Done()
-			OneOfMyStructs := calculateRoutesForSymbol(symbols, startEndAsset)
+			OneOfMyStructs := symbols.calculateRoutesForSymbol(startEndAsset)
 			mu.Lock()
-			routes = append(routes, OneOfMyStructs...)
+			routes = append(routes, *OneOfMyStructs...)
 			mu.Unlock()
-		}(symbols, startEndAsset)
+		}(s, startEndAsset)
 	}
 	wg.Wait()
 	endCalculationTime := time.Now()
 	fmt.Println(endCalculationTime.UnixMilli() - startCalculationTime.UnixMilli())
-	return routes
+	return &routes
 }
 
-func calculateRoutesForSymbol(symbols Symbols, startEndAsset string) Routes {
+func (s *Symbols) calculateRoutesForSymbol(startEndAsset string) *Routes {
 	var routes Routes
-	for _, asset1 := range symbols.findAllByAsset(startEndAsset) {
-		var targetAsset1 = getTargetAsset(asset1, startEndAsset)
-		for _, asset2 := range symbols.findAllByAsset(targetAsset1) {
-			targetAsset2 := getTargetAsset(asset2, targetAsset1)
+	for _, asset1 := range *s.findAllByAsset(startEndAsset) {
+		var targetAsset1 = asset1.getTargetAsset(startEndAsset)
+		for _, asset2 := range *s.findAllByAsset(targetAsset1) {
+			targetAsset2 := asset2.getTargetAsset(targetAsset1)
 			if targetAsset2 == startEndAsset {
 				continue
 			}
-			pair, err := symbols.findByAssetPair(targetAsset2, startEndAsset)
+			pair, err := s.findByAssetPair(targetAsset2, startEndAsset)
 			if err != nil {
 				continue
 			}
@@ -83,17 +73,17 @@ func calculateRoutesForSymbol(symbols Symbols, startEndAsset string) Routes {
 			routes = append(routes, trades)
 		}
 	}
-	return routes
+	return &routes
 }
 
-func (r Routes) getProfitableRoutes(symbols Symbols, usdtSymbols Symbols) (RoutesWithProfit, RoutesWithProfit) {
+func (r *Routes) getProfitableRoutes(symbols Symbols, usdtSymbols Symbols) (*RoutesWithProfit, *RoutesWithProfit) {
 	var profitableRoutes = make(RoutesWithProfit, 0)
 	var routesWithLoss = make(RoutesWithProfit, 0)
 
 	var wg sync.WaitGroup
 	mu := &sync.Mutex{}
 
-	for _, trades := range r {
+	for _, trades := range *r {
 		wg.Add(1)
 		go func(trades Trades, symbols Symbols, usdtSymbols Symbols) {
 			defer wg.Done()
@@ -134,106 +124,37 @@ func (r Routes) getProfitableRoutes(symbols Symbols, usdtSymbols Symbols) (Route
 		})
 	}(routesWithLoss)
 	wg.Wait()
-	return profitableRoutes, routesWithLoss
+	return &profitableRoutes, &routesWithLoss
 }
 
-func getTargetAsset(symbol Symbol, ignore string) string {
-	var targetAsset2 string
-	if symbol.QuoteAsset != ignore {
-		targetAsset2 = symbol.QuoteAsset
-	} else {
-		targetAsset2 = symbol.BaseAsset
-	}
-	return targetAsset2
-}
-
-func (t RouteWithProfit) getRouteString() string {
-	var readableTrade string
-	for i, trade := range t.Trades {
-		if i == 0 {
-			readableTrade = fmt.Sprintf("%s %s -> %s", readableTrade, trade.From, trade.To)
-		} else {
-			readableTrade = fmt.Sprintf("%s -> %s", readableTrade, trade.To)
-		}
-	}
-	return fmt.Sprintf("%s Profit: %f USD", readableTrade, t.Profit)
-}
-
-func (t RouteWithProfit) print() {
-	var readableTrade string
-	for i, trade := range t.Trades {
-		if i == 0 {
-			readableTrade = fmt.Sprintf("%s %s -> %s", readableTrade, trade.From, trade.To)
-		} else {
-			readableTrade = fmt.Sprintf("%s -> %s", readableTrade, trade.To)
-		}
-	}
-	fmt.Printf("%s Profit: %f USD\n", readableTrade, t.Profit)
-}
-
-func (r RoutesWithProfit) getBestRouteString() string {
-	sort.Slice(r, func(i, j int) bool {
-		return r[i].Profit > r[j].Profit
-	})
-	return r[0].getRouteString()
-}
-
-func (r RoutesWithProfit) print(top int) {
-	sort.Slice(r, func(i, j int) bool {
-		return r[i].Profit > r[j].Profit
-	})
-	var limit int
-	if len(r) > top {
-		limit = top
-	} else {
-		limit = len(r)
-	}
-	for _, route := range r[:limit] {
-		route.print()
-	}
-}
-
-type RouteWithProfit struct {
-	Trades
-	Profit float64
-}
-
-func (t Trades) calculateProfit(symbols Symbols, usdtSymbols Symbols) (RouteWithProfit, error) {
+func (t Trades) calculateProfit(symbols Symbols, usdtSymbols Symbols) (*RouteWithProfit, error) {
 	baseBudget := constants.BasePrice
 	var previousPrice = baseBudget
 	for i, trade := range t {
 		if i == 0 {
-			usdtSymbols, err := usdtSymbols.findByAssetPair(constants.USDT, trade.From)
+			usdtSymbol, err := usdtSymbols.findByAssetPair(constants.USDT, trade.From)
 			if err != nil {
-				return RouteWithProfit{}, err
+				return &RouteWithProfit{}, err
 			}
-			previousPrice = convertPrice(usdtSymbols, previousPrice, constants.USDT, trade.From, 0)
+			previousPrice = usdtSymbol.convertPrice(previousPrice, constants.USDT, trade.From, false)
 		}
 		symbol, err := symbols.findByAssetPair(trade.From, trade.To)
 		if err != nil {
-			return RouteWithProfit{}, err
+			return &RouteWithProfit{}, err
 		}
-		previousPrice = convertPrice(symbol, previousPrice, trade.From, trade.To, constants.Fee)
+		previousPrice = symbol.convertPrice(previousPrice, trade.From, trade.To, false)
 
 		if i+1 == len(t) {
-			usdtSymbols, err := usdtSymbols.findByAssetPair(trade.To, constants.USDT)
+			usdtSymbol, err := usdtSymbols.findByAssetPair(trade.To, constants.USDT)
 			if err != nil {
-				return RouteWithProfit{}, err
+				return &RouteWithProfit{}, err
 			}
-			previousPrice = convertPrice(usdtSymbols, previousPrice, trade.To, constants.USDT, 0)
-			return RouteWithProfit{
+			previousPrice = usdtSymbol.convertPrice(previousPrice, trade.To, constants.USDT, false)
+			return &RouteWithProfit{
 				Trades: t,
 				Profit: previousPrice - baseBudget,
 			}, nil
 		}
 	}
-	return RouteWithProfit{}, errors.New("cannot calculate price")
-}
-
-func convertPrice(symbol Symbol, basePrice float64, from string, to string, fee float64) float64 {
-	if strings.EqualFold(symbol.BaseAsset, from) && strings.EqualFold(symbol.QuoteAsset, to) { // SELL
-		return symbol.BidPrice * basePrice * (1 - (fee / 100))
-	} else { // BUY
-		return (1 / symbol.AskPrice) * basePrice * (1 - (fee / 100))
-	}
+	return &RouteWithProfit{}, errors.New("cannot calculate price")
 }
