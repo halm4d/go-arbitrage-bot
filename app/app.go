@@ -12,7 +12,7 @@ func Run() {
 	fmt.Printf("Calculating possible routes...\n")
 	symbols, usdtSymbols := NewSymbols()
 
-	routes := symbols.CalculateAllRoutes()
+	routes := symbols.calculateAllRoutes()
 	fmt.Printf("Found routes: %v\n", len(*routes))
 
 	for {
@@ -20,7 +20,7 @@ func Run() {
 		usdtSymbols.updatePrices()
 
 		startOfCalculation := time.Now()
-		profitableRoutes, loosedRoutes := routes.getProfitableRoutes(*symbols, *usdtSymbols)
+		profitableRoutes, loosedRoutes := routes.getProfitableRoutes(symbols, usdtSymbols)
 		endOfCalculation := time.Now()
 
 		go func(profitableRoutes *RoutesWithProfit, loosedRoutes *RoutesWithProfit) {

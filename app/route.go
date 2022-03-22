@@ -1,12 +1,8 @@
 package app
 
 import (
-	"errors"
-	"fmt"
-	"github.com/halm4d/arbitragecli/constants"
 	"sort"
 	"sync"
-	"time"
 )
 
 const (
@@ -18,12 +14,12 @@ type Type int8
 
 type Routes []Trades
 
-func (s *Symbols) CalculateAllRoutes() *Routes {
-	startCalculationTime := time.Now()
+func (s *Symbols) calculateAllRoutes() *Routes {
 	var routes = make(Routes, 0)
 
 	var wg sync.WaitGroup
 	mu := &sync.Mutex{}
+
 	for _, startEndAsset := range AllCryptoCurrency() {
 		wg.Add(1)
 		go func(symbols *Symbols, startEndAsset string) {
@@ -35,8 +31,6 @@ func (s *Symbols) CalculateAllRoutes() *Routes {
 		}(s, startEndAsset)
 	}
 	wg.Wait()
-	endCalculationTime := time.Now()
-	fmt.Println(endCalculationTime.UnixMilli() - startCalculationTime.UnixMilli())
 	return &routes
 }
 
@@ -76,7 +70,7 @@ func (s *Symbols) calculateRoutesForSymbol(startEndAsset string) *Routes {
 	return &routes
 }
 
-func (r *Routes) getProfitableRoutes(symbols Symbols, usdtSymbols Symbols) (*RoutesWithProfit, *RoutesWithProfit) {
+func (r *Routes) getProfitableRoutes(symbols *Symbols, usdtSymbols *Symbols) (*RoutesWithProfit, *RoutesWithProfit) {
 	var profitableRoutes = make(RoutesWithProfit, 0)
 	var routesWithLoss = make(RoutesWithProfit, 0)
 
@@ -85,7 +79,7 @@ func (r *Routes) getProfitableRoutes(symbols Symbols, usdtSymbols Symbols) (*Rou
 
 	for _, trades := range *r {
 		wg.Add(1)
-		go func(trades Trades, symbols Symbols, usdtSymbols Symbols) {
+		go func(trades Trades, symbols *Symbols, usdtSymbols *Symbols) {
 			defer wg.Done()
 			profit, err := trades.calculateProfit(symbols, usdtSymbols)
 			if err != nil {
@@ -110,6 +104,12 @@ func (r *Routes) getProfitableRoutes(symbols Symbols, usdtSymbols Symbols) (*Rou
 	}
 	wg.Wait()
 
+	sortRoutes(profitableRoutes, routesWithLoss)
+	return &profitableRoutes, &routesWithLoss
+}
+
+func sortRoutes(profitableRoutes RoutesWithProfit, routesWithLoss RoutesWithProfit) {
+	var wg sync.WaitGroup
 	wg.Add(2)
 	go func(profitableRoutes RoutesWithProfit) {
 		defer wg.Done()
@@ -124,37 +124,4 @@ func (r *Routes) getProfitableRoutes(symbols Symbols, usdtSymbols Symbols) (*Rou
 		})
 	}(routesWithLoss)
 	wg.Wait()
-	return &profitableRoutes, &routesWithLoss
-}
-
-func (t Trades) calculateProfit(symbols Symbols, usdtSymbols Symbols) (*RouteWithProfit, error) {
-	baseBudget := constants.BasePrice
-	var previousPrice = baseBudget
-	for i, trade := range t {
-		if i == 0 {
-			usdtSymbol, err := usdtSymbols.findByAssetPair(constants.USDT, trade.From)
-			if err != nil {
-				return &RouteWithProfit{}, err
-			}
-			previousPrice = usdtSymbol.convertPrice(previousPrice, constants.USDT, trade.From, false)
-		}
-		symbol, err := symbols.findByAssetPair(trade.From, trade.To)
-		if err != nil {
-			return &RouteWithProfit{}, err
-		}
-		previousPrice = symbol.convertPrice(previousPrice, trade.From, trade.To, false)
-
-		if i+1 == len(t) {
-			usdtSymbol, err := usdtSymbols.findByAssetPair(trade.To, constants.USDT)
-			if err != nil {
-				return &RouteWithProfit{}, err
-			}
-			previousPrice = usdtSymbol.convertPrice(previousPrice, trade.To, constants.USDT, false)
-			return &RouteWithProfit{
-				Trades: t,
-				Profit: previousPrice - baseBudget,
-			}, nil
-		}
-	}
-	return &RouteWithProfit{}, errors.New("cannot calculate price")
 }
