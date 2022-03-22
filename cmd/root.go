@@ -12,7 +12,8 @@ var rootCmd = &cobra.Command{
 	Use:     "arbcli",
 	Version: "v0.0.1-alpha",
 	Run: func(cmd *cobra.Command, args []string) {
-		app.Run()
+		//app.Run()
+		app.RunWebSocket()
 	},
 }
 
