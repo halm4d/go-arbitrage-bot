@@ -5,7 +5,6 @@ import (
 	"github.com/halm4d/arbitragecli/client"
 	"github.com/halm4d/arbitragecli/constants"
 	"github.com/halm4d/arbitragecli/util"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -28,15 +27,15 @@ type Symbol struct {
 	AskPrice float64
 }
 
-func NewSymbols() (*Symbols, *Symbols) {
+func NewSymbols() (map[string]Symbol, map[string]Symbol) {
 	prices := make(chan *[]client.TickerPriceResp)
 	exchange := make(chan *[]client.SymbolResp)
 
 	go client.GetPrices(prices)
 	go client.GetExchangeInfo(exchange)
 
-	var usdtSymbols Symbols
-	var symbols Symbols
+	var usdtSymbols = make(map[string]Symbol)
+	var symbols = make(map[string]Symbol)
 	priceResp := *<-prices
 	exchangeResp := *<-exchange
 	for _, price := range priceResp {
@@ -50,32 +49,26 @@ func NewSymbols() (*Symbols, *Symbols) {
 			bidPrice, _ := strconv.ParseFloat(price.BidPrice, 64)
 			askPrice, _ := strconv.ParseFloat(price.AskPrice, 64)
 			if exchange.QuoteAsset == constants.USDT || exchange.BaseAsset == constants.USDT {
-				usdtSymbols = append(usdtSymbols, Symbol{
+				usdtSymbols[exchange.Symbol] = Symbol{
 					Symbol:     exchange.Symbol,
 					BaseAsset:  exchange.BaseAsset,
 					QuoteAsset: exchange.QuoteAsset,
 					AskPrice:   askPrice,
 					BidPrice:   bidPrice,
-				})
+				}
 			}
 			if util.Contains(AllCryptoCurrency(), exchange.QuoteAsset) && util.Contains(AllCryptoCurrency(), exchange.BaseAsset) {
-				symbols = append(symbols, Symbol{
+				symbols[exchange.Symbol] = Symbol{
 					Symbol:     exchange.Symbol,
 					BaseAsset:  exchange.BaseAsset,
 					QuoteAsset: exchange.QuoteAsset,
 					AskPrice:   askPrice,
 					BidPrice:   bidPrice,
-				})
+				}
 			}
 		}
 	}
-	sort.Slice(symbols, func(i, j int) bool {
-		return symbols[i].Symbol < symbols[j].Symbol
-	})
-	sort.Slice(usdtSymbols, func(i, j int) bool {
-		return usdtSymbols[i].Symbol < usdtSymbols[j].Symbol
-	})
-	return &symbols, &usdtSymbols
+	return symbols, usdtSymbols
 }
 
 func (s Symbols) updatePrices() {
@@ -103,9 +96,9 @@ func (s *Symbols) findBySymbol(target string) (*Symbol, error) {
 	return &Symbol{Symbol: "", BaseAsset: "", QuoteAsset: "", BidPrice: -1, AskPrice: -1}, errors.New("target symbol not found")
 }
 
-func (s *Symbols) findAllByAsset(asset string) *Symbols {
+func FindAllSymbolByAsset(s map[string]Symbol, asset string) *Symbols {
 	var symbols Symbols
-	for _, symbol := range *s {
+	for _, symbol := range s {
 		if symbol.BaseAsset == asset || symbol.QuoteAsset == asset {
 			symbols = append(symbols, symbol)
 		}
@@ -123,13 +116,22 @@ func (s *Symbols) findAllByAssets(asset1 string, asset2 string) *Symbols {
 	return &symbols
 }
 
-func (s *Symbols) findByAssetPair(asset1 string, asset2 string) (*Symbol, error) {
+func FindByAssetPair(s *map[string]Symbol, asset1 string, asset2 string) (*Symbol, error) {
 	for _, symbol := range *s {
 		if (symbol.BaseAsset == asset1 || symbol.QuoteAsset == asset1) && (symbol.BaseAsset == asset2 || symbol.QuoteAsset == asset2) {
 			return &symbol, nil
 		}
 	}
 	return &Symbol{}, errors.New("symbol not found")
+}
+
+func FindBookTickerByAssetPair(bookTickerMap map[string]BookTicker, asset1 string, asset2 string) (*BookTicker, error) {
+	for _, bookTicker := range bookTickerMap {
+		if (bookTicker.BaseAsset == asset1 || bookTicker.QuoteAsset == asset1) && (bookTicker.BaseAsset == asset2 || bookTicker.QuoteAsset == asset2) {
+			return &bookTicker, nil
+		}
+	}
+	return &BookTicker{}, errors.New("symbol not found")
 }
 
 func (s *Symbol) getTargetAsset(ignore string) string {
@@ -142,14 +144,14 @@ func (s *Symbol) getTargetAsset(ignore string) string {
 	return targetAsset2
 }
 
-func (s *Symbol) convertPrice(basePrice float64, from string, to string, addFee bool) float64 {
+func ConvertPrice(bookTicker *BookTicker, basePrice float64, from string, to string, addFee bool) float64 {
 	fee := .0
 	if addFee {
 		fee = constants.Fee
 	}
-	if strings.EqualFold(s.BaseAsset, from) && strings.EqualFold(s.QuoteAsset, to) { // SELL
-		return s.BidPrice * basePrice * (1 - (fee / 100))
+	if strings.EqualFold(bookTicker.BaseAsset, from) && strings.EqualFold(bookTicker.QuoteAsset, to) { // SELL
+		return bookTicker.BidPrice * basePrice * (1 - (fee / 100))
 	} else {
-		return (1 / s.AskPrice) * basePrice * (1 - (fee / 100))
+		return (1 / bookTicker.AskPrice) * basePrice * (1 - (fee / 100))
 	}
 }

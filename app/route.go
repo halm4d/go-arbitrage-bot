@@ -14,7 +14,7 @@ type Type int8
 
 type Routes []Trades
 
-func (s *Symbols) calculateAllRoutes() *Routes {
+func CalculateAllRoutes(symbols *map[string]Symbol) *Routes {
 	var routes = make(Routes, 0)
 
 	var wg sync.WaitGroup
@@ -22,28 +22,28 @@ func (s *Symbols) calculateAllRoutes() *Routes {
 
 	for _, startEndAsset := range AllCryptoCurrency() {
 		wg.Add(1)
-		go func(symbols *Symbols, startEndAsset string) {
+		go func(symbols *map[string]Symbol, startEndAsset string) {
 			defer wg.Done()
-			OneOfMyStructs := symbols.calculateRoutesForSymbol(startEndAsset)
+			OneOfMyStructs := calculateRoutesForSymbol(symbols, startEndAsset)
 			mu.Lock()
 			routes = append(routes, *OneOfMyStructs...)
 			mu.Unlock()
-		}(s, startEndAsset)
+		}(symbols, startEndAsset)
 	}
 	wg.Wait()
 	return &routes
 }
 
-func (s *Symbols) calculateRoutesForSymbol(startEndAsset string) *Routes {
+func calculateRoutesForSymbol(symbols *map[string]Symbol, startEndAsset string) *Routes {
 	var routes Routes
-	for _, asset1 := range *s.findAllByAsset(startEndAsset) {
+	for _, asset1 := range *FindAllSymbolByAsset(*symbols, startEndAsset) {
 		var targetAsset1 = asset1.getTargetAsset(startEndAsset)
-		for _, asset2 := range *s.findAllByAsset(targetAsset1) {
+		for _, asset2 := range *FindAllSymbolByAsset(*symbols, targetAsset1) {
 			targetAsset2 := asset2.getTargetAsset(targetAsset1)
 			if targetAsset2 == startEndAsset {
 				continue
 			}
-			pair, err := s.findByAssetPair(targetAsset2, startEndAsset)
+			pair, err := FindByAssetPair(symbols, targetAsset2, startEndAsset)
 			if err != nil {
 				continue
 			}
@@ -70,7 +70,7 @@ func (s *Symbols) calculateRoutesForSymbol(startEndAsset string) *Routes {
 	return &routes
 }
 
-func (r *Routes) getProfitableRoutes(symbols *Symbols, usdtSymbols *Symbols) (*RoutesWithProfit, *RoutesWithProfit) {
+func (r *Routes) getProfitableRoutes(bookTickerMap map[string]BookTicker) (*RoutesWithProfit, *RoutesWithProfit) {
 	var profitableRoutes = make(RoutesWithProfit, 0)
 	var routesWithLoss = make(RoutesWithProfit, 0)
 
@@ -79,9 +79,9 @@ func (r *Routes) getProfitableRoutes(symbols *Symbols, usdtSymbols *Symbols) (*R
 
 	for _, trades := range *r {
 		wg.Add(1)
-		go func(trades Trades, symbols *Symbols, usdtSymbols *Symbols) {
+		go func(trades Trades, bookTickerMap map[string]BookTicker) {
 			defer wg.Done()
-			profit, err := trades.calculateProfit(symbols, usdtSymbols)
+			profit, err := trades.calculateProfit(bookTickerMap)
 			if err != nil {
 				return
 			}
@@ -100,7 +100,7 @@ func (r *Routes) getProfitableRoutes(symbols *Symbols, usdtSymbols *Symbols) (*R
 				})
 				mu.Unlock()
 			}
-		}(trades, symbols, usdtSymbols)
+		}(trades, bookTickerMap)
 	}
 	wg.Wait()
 
