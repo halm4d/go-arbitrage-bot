@@ -87,7 +87,7 @@ func RunWebSocket() {
 
 	go receiveHandler(conn)
 	go findArbitrates(routes)
-	go printMap()
+	//go printMap()
 
 	// Our main loop for the client
 	// We send our relevant packets here
@@ -122,8 +122,12 @@ func findArbitrates(routes *Routes) {
 		for key, value := range bookTickerMap {
 			bookTickerMapCopy[key] = value
 		}
+		var usdtBookTickerMapCopy = make(map[string]BookTicker)
+		for key, value := range usdtBookTickerMap {
+			usdtBookTickerMapCopy[key] = value
+		}
 		mu.Unlock()
-		profitableRoutes, loosedRoutes := routes.getProfitableRoutes(&bookTickerMapCopy)
+		profitableRoutes, loosedRoutes := routes.getProfitableRoutes(&bookTickerMapCopy, &usdtBookTickerMapCopy)
 		endOfCalculation := time.Now()
 		go func(profitableRoutes *RoutesWithProfit, loosedRoutes *RoutesWithProfit) {
 			lenOfProfitableRoutes := len(*profitableRoutes)
@@ -147,6 +151,7 @@ func findArbitrates(routes *Routes) {
 		}(profitableRoutes, loosedRoutes)
 
 		fmt.Printf("%sCalculation time: %v ms\n", color.Cyan, endOfCalculation.UnixMilli()-startOfCalculation.UnixMilli())
+		printMap()
 	}
 }
 
@@ -154,10 +159,7 @@ var done chan interface{}
 var interrupt chan os.Signal
 
 func printMap() {
-	for {
-		time.Sleep(time.Second)
-		fmt.Printf("len: %v btcusdt: %+v btceth: %+v\n", len(bookTickerMap), bookTickerMap["BTCUSDT"], bookTickerMap["ETHBTC"])
-	}
+	fmt.Printf("len: %v btcusdt: %+v btceth: %+v\n", len(bookTickerMap), bookTickerMap["BTCUSDT"], bookTickerMap["ETHBTC"])
 }
 
 func receiveHandler(connection *websocket.Conn) {
@@ -179,32 +181,47 @@ func receiveHandler(connection *websocket.Conn) {
 
 		//log.Printf("Received: %+v\n", target)
 		symbol, ok := symbols[target.S]
-		if !ok {
-			symbol, ok = usdtSymbols[target.S]
-			if !ok {
-				continue
+		if ok {
+			bidPrice, _ := strconv.ParseFloat(target.B, 64)
+			bidQty, _ := strconv.ParseFloat(target.B1, 64)
+			askPrice, _ := strconv.ParseFloat(target.A, 64)
+			askQty, _ := strconv.ParseFloat(target.A1, 64)
+			mu.Lock()
+			bookTickerMap[target.S] = BookTicker{
+				Symbol:     target.S,
+				BaseAsset:  symbol.BaseAsset,
+				QuoteAsset: symbol.QuoteAsset,
+				BidPrice:   bidPrice,
+				BidQty:     bidQty,
+				AskPrice:   askPrice,
+				AskQty:     askQty,
 			}
+			mu.Unlock()
 		}
-		bidPrice, _ := strconv.ParseFloat(target.B, 64)
-		bidQty, _ := strconv.ParseFloat(target.B1, 64)
-		askPrice, _ := strconv.ParseFloat(target.A, 64)
-		askQty, _ := strconv.ParseFloat(target.A1, 64)
-		mu.Lock()
-		bookTickerMap[target.S] = BookTicker{
-			Symbol:     target.S,
-			BaseAsset:  symbol.BaseAsset,
-			QuoteAsset: symbol.QuoteAsset,
-			BidPrice:   bidPrice,
-			BidQty:     bidQty,
-			AskPrice:   askPrice,
-			AskQty:     askQty,
+		symbol, ok = usdtSymbols[target.S]
+		if ok {
+			bidPrice, _ := strconv.ParseFloat(target.B, 64)
+			bidQty, _ := strconv.ParseFloat(target.B1, 64)
+			askPrice, _ := strconv.ParseFloat(target.A, 64)
+			askQty, _ := strconv.ParseFloat(target.A1, 64)
+			mu.Lock()
+			usdtBookTickerMap[target.S] = BookTicker{
+				Symbol:     target.S,
+				BaseAsset:  symbol.BaseAsset,
+				QuoteAsset: symbol.QuoteAsset,
+				BidPrice:   bidPrice,
+				BidQty:     bidQty,
+				AskPrice:   askPrice,
+				AskQty:     askQty,
+			}
+			mu.Unlock()
 		}
-		mu.Unlock()
 	}
 }
 
 var mu = sync.Mutex{}
 var bookTickerMap = make(map[string]BookTicker)
+var usdtBookTickerMap = make(map[string]BookTicker)
 
 type BookTicker struct {
 	Symbol     string

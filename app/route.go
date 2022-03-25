@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/halm4d/arbitragecli/constants"
 	"sort"
 	"sync"
 )
@@ -38,7 +39,13 @@ func calculateRoutesForSymbol(symbols *map[string]Symbol, startEndAsset string) 
 	var routes Routes
 	for _, asset1 := range *FindAllSymbolByAsset(*symbols, startEndAsset) {
 		var targetAsset1 = asset1.getTargetAsset(startEndAsset)
+		if asset1.BaseAsset == constants.USDT || asset1.QuoteAsset == constants.USDT {
+			continue
+		}
 		for _, asset2 := range *FindAllSymbolByAsset(*symbols, targetAsset1) {
+			if asset2.BaseAsset == constants.USDT || asset2.QuoteAsset == constants.USDT {
+				continue
+			}
 			targetAsset2 := asset2.getTargetAsset(targetAsset1)
 			if targetAsset2 == startEndAsset {
 				continue
@@ -70,7 +77,7 @@ func calculateRoutesForSymbol(symbols *map[string]Symbol, startEndAsset string) 
 	return &routes
 }
 
-func (r *Routes) getProfitableRoutes(bookTickerMap *map[string]BookTicker) (*RoutesWithProfit, *RoutesWithProfit) {
+func (r *Routes) getProfitableRoutes(bookTickerMap *map[string]BookTicker, usdtBookTicker *map[string]BookTicker) (*RoutesWithProfit, *RoutesWithProfit) {
 	var profitableRoutes = make(RoutesWithProfit, 0)
 	var routesWithLoss = make(RoutesWithProfit, 0)
 
@@ -79,9 +86,9 @@ func (r *Routes) getProfitableRoutes(bookTickerMap *map[string]BookTicker) (*Rou
 
 	for _, trades := range *r {
 		wg.Add(1)
-		go func(trades Trades, bookTickerMap *map[string]BookTicker) {
+		go func(trades Trades, bookTickerMap *map[string]BookTicker, usdtBookTicker *map[string]BookTicker) {
 			defer wg.Done()
-			profit, err := trades.calculateProfit(bookTickerMap)
+			profit, err := trades.calculateProfit(bookTickerMap, usdtBookTicker)
 			if err != nil {
 				return
 			}
@@ -100,7 +107,7 @@ func (r *Routes) getProfitableRoutes(bookTickerMap *map[string]BookTicker) (*Rou
 				})
 				mu.Unlock()
 			}
-		}(trades, bookTickerMap)
+		}(trades, bookTickerMap, usdtBookTicker)
 	}
 	wg.Wait()
 
