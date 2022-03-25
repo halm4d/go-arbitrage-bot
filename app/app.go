@@ -159,7 +159,7 @@ var done chan interface{}
 var interrupt chan os.Signal
 
 func printMap() {
-	fmt.Printf("len: %v btcusdt: %+v btceth: %+v\n", len(bookTickerMap), bookTickerMap["BTCUSDT"], bookTickerMap["ETHBTC"])
+	fmt.Printf("len: %v\n", len(bookTickerMap))
 }
 
 func receiveHandler(connection *websocket.Conn) {
