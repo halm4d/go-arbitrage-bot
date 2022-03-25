@@ -70,7 +70,7 @@ func calculateRoutesForSymbol(symbols *map[string]Symbol, startEndAsset string) 
 	return &routes
 }
 
-func (r *Routes) getProfitableRoutes(bookTickerMap map[string]BookTicker) (*RoutesWithProfit, *RoutesWithProfit) {
+func (r *Routes) getProfitableRoutes(bookTickerMap *map[string]BookTicker) (*RoutesWithProfit, *RoutesWithProfit) {
 	var profitableRoutes = make(RoutesWithProfit, 0)
 	var routesWithLoss = make(RoutesWithProfit, 0)
 
@@ -79,7 +79,7 @@ func (r *Routes) getProfitableRoutes(bookTickerMap map[string]BookTicker) (*Rout
 
 	for _, trades := range *r {
 		wg.Add(1)
-		go func(trades Trades, bookTickerMap map[string]BookTicker) {
+		go func(trades Trades, bookTickerMap *map[string]BookTicker) {
 			defer wg.Done()
 			profit, err := trades.calculateProfit(bookTickerMap)
 			if err != nil {

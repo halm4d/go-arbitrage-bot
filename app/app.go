@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -82,6 +83,7 @@ func RunWebSocket() {
 	}(conn)
 
 	routes := CalculateAllRoutes(&symbols)
+	fmt.Printf("Found routes: %v\n", len(*routes))
 
 	go receiveHandler(conn)
 	go findArbitrates(routes)
@@ -113,8 +115,15 @@ func RunWebSocket() {
 
 func findArbitrates(routes *Routes) {
 	for {
+		time.Sleep(time.Second * 1)
 		startOfCalculation := time.Now()
-		profitableRoutes, loosedRoutes := routes.getProfitableRoutes(bookTickerMap)
+		mu.Lock()
+		var bookTickerMapCopy = make(map[string]BookTicker)
+		for key, value := range bookTickerMap {
+			bookTickerMapCopy[key] = value
+		}
+		mu.Unlock()
+		profitableRoutes, loosedRoutes := routes.getProfitableRoutes(&bookTickerMapCopy)
 		endOfCalculation := time.Now()
 		go func(profitableRoutes *RoutesWithProfit, loosedRoutes *RoutesWithProfit) {
 			lenOfProfitableRoutes := len(*profitableRoutes)
@@ -138,7 +147,6 @@ func findArbitrates(routes *Routes) {
 		}(profitableRoutes, loosedRoutes)
 
 		fmt.Printf("%sCalculation time: %v ms\n", color.Cyan, endOfCalculation.UnixMilli()-startOfCalculation.UnixMilli())
-		time.Sleep(time.Second * 1)
 	}
 }
 
@@ -181,6 +189,7 @@ func receiveHandler(connection *websocket.Conn) {
 		bidQty, _ := strconv.ParseFloat(target.B1, 64)
 		askPrice, _ := strconv.ParseFloat(target.A, 64)
 		askQty, _ := strconv.ParseFloat(target.A1, 64)
+		mu.Lock()
 		bookTickerMap[target.S] = BookTicker{
 			Symbol:     target.S,
 			BaseAsset:  symbol.BaseAsset,
@@ -190,9 +199,11 @@ func receiveHandler(connection *websocket.Conn) {
 			AskPrice:   askPrice,
 			AskQty:     askQty,
 		}
+		mu.Unlock()
 	}
 }
 
+var mu = sync.Mutex{}
 var bookTickerMap = make(map[string]BookTicker)
 
 type BookTicker struct {
