@@ -133,19 +133,19 @@ func findArbitrates(routes *Routes) {
 			lenOfProfitableRoutes := len(*profitableRoutes)
 			if constants.Verbose {
 				if lenOfProfitableRoutes != 0 {
-					fmt.Printf("%sFound profitable routes: %v\n", color.Green, lenOfProfitableRoutes)
-					fmt.Printf("%sBest possible routes: \n", color.Green)
+					log.Printf("%sFound profitable routes: %v\n", color.Green, lenOfProfitableRoutes)
+					log.Printf("%sBest possible routes: \n", color.Green)
 					profitableRoutes.print(10)
 				} else {
-					fmt.Printf("%sProfitable route not found yet. Best possible route was: %s\n", color.Red, loosedRoutes.getBestRouteString())
+					log.Printf("%sProfitable route not found yet. Best possible route was: %s\n", color.Red, loosedRoutes.getBestRouteString())
 					loosedRoutes.print(10)
 				}
 			} else {
 				if lenOfProfitableRoutes != 0 {
-					fmt.Printf("%sFound profitable routes: %v\n", color.Green, lenOfProfitableRoutes)
-					fmt.Printf("%sBest possible route was: %s\n", color.Green, profitableRoutes.getBestRouteString())
+					log.Printf("%sFound profitable routes: %v\n", color.Green, lenOfProfitableRoutes)
+					log.Printf("%sBest possible route was: %s\n", color.Green, profitableRoutes.getBestRouteString())
 				} else {
-					fmt.Printf("%sProfitable route not found yet. Best possible route was: %s\n", color.Red, loosedRoutes.getBestRouteString())
+					log.Printf("%sProfitable route not found yet. Best possible route was: %s\n", color.Red, loosedRoutes.getBestRouteString())
 				}
 			}
 		}(profitableRoutes, loosedRoutes)

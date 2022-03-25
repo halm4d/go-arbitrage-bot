@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"log"
 	"sort"
 )
 
@@ -33,7 +34,7 @@ func (t *RouteWithProfit) print() {
 			readableTrade = fmt.Sprintf("%s -> %s", readableTrade, trade.To)
 		}
 	}
-	fmt.Printf("%s Profit: %f USD\n", readableTrade, t.Profit)
+	log.Printf("%s Profit: %f USD\n", readableTrade, t.Profit)
 }
 
 func (r RoutesWithProfit) getBestRouteString() string {
