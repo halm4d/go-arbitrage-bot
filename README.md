@@ -1,6 +1,7 @@
 # go-arbitrage-bot
 
 ## Help
+
 ```
 Usage:
   arbcli [flags]

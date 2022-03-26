@@ -1,12 +1,9 @@
-package app
+package arb
 
 import (
 	"errors"
-	"github.com/halm4d/arbitragecli/client"
 	"github.com/halm4d/arbitragecli/constants"
 	"github.com/halm4d/arbitragecli/util"
-	"strconv"
-	"strings"
 )
 
 func AllCryptoCurrency() []string {
@@ -16,107 +13,61 @@ func AllCryptoCurrency() []string {
 	//return []string{"BNB", "BTC", "COCOS"}
 }
 
-type Symbols []Symbol
+type Symbols struct {
+	CS SymbolsMap
+	US SymbolsMap
+}
+
+type SymbolsMap map[string]Symbol
 
 type Symbol struct {
 	Symbol     string
 	BaseAsset  string
 	QuoteAsset string
-	//Price      float64
-	BidPrice float64
-	AskPrice float64
+	BidPrice   float64
+	AskPrice   float64
 }
 
-func NewSymbols() (map[string]Symbol, map[string]Symbol) {
-	prices := make(chan *[]client.TickerPriceResp)
-	exchange := make(chan *[]client.SymbolResp)
+func NewSymbols() *Symbols {
+	return &Symbols{
+		US: make(map[string]Symbol),
+		CS: make(map[string]Symbol),
+	}
+}
 
-	go client.GetPrices(prices)
-	go client.GetExchangeInfo(exchange)
-
-	var usdtSymbols = make(map[string]Symbol)
-	var symbols = make(map[string]Symbol)
-	priceResp := *<-prices
-	exchangeResp := *<-exchange
-	for _, price := range priceResp {
-		for _, exchange := range exchangeResp {
-			if exchange.Status != "TRADING" {
-				continue
-			}
-			if price.Symbol != exchange.Symbol {
-				continue
-			}
-			bidPrice, _ := strconv.ParseFloat(price.BidPrice, 64)
-			askPrice, _ := strconv.ParseFloat(price.AskPrice, 64)
-			if exchange.QuoteAsset == constants.USDT || exchange.BaseAsset == constants.USDT {
-				usdtSymbols[exchange.Symbol] = Symbol{
-					Symbol:     exchange.Symbol,
-					BaseAsset:  exchange.BaseAsset,
-					QuoteAsset: exchange.QuoteAsset,
-					AskPrice:   askPrice,
-					BidPrice:   bidPrice,
-				}
-			}
-			if util.Contains(AllCryptoCurrency(), exchange.QuoteAsset) && util.Contains(AllCryptoCurrency(), exchange.BaseAsset) {
-				symbols[exchange.Symbol] = Symbol{
-					Symbol:     exchange.Symbol,
-					BaseAsset:  exchange.BaseAsset,
-					QuoteAsset: exchange.QuoteAsset,
-					AskPrice:   askPrice,
-					BidPrice:   bidPrice,
-				}
+func (s *Symbols) Init(exchangeResp *ExchangeInfoResp) {
+	for _, exchange := range exchangeResp.Symbols {
+		if exchange.Status != "TRADING" {
+			continue
+		}
+		if exchange.QuoteAsset == constants.USDT || exchange.BaseAsset == constants.USDT {
+			s.US[exchange.Symbol] = Symbol{
+				Symbol:     exchange.Symbol,
+				BaseAsset:  exchange.BaseAsset,
+				QuoteAsset: exchange.QuoteAsset,
 			}
 		}
-	}
-	return symbols, usdtSymbols
-}
-
-func (s Symbols) updatePrices() {
-	pricesChan := make(chan *[]client.TickerPriceResp)
-	go client.GetPrices(pricesChan)
-	priceResp := *<-pricesChan
-	for i, symbol := range s {
-		for _, price := range priceResp {
-			if symbol.Symbol == price.Symbol {
-				bidPrice, _ := strconv.ParseFloat(price.BidPrice, 64)
-				askPrice, _ := strconv.ParseFloat(price.AskPrice, 64)
-				s[i].BidPrice = bidPrice
-				s[i].AskPrice = askPrice
+		if util.Contains(AllCryptoCurrency(), exchange.QuoteAsset) && util.Contains(AllCryptoCurrency(), exchange.BaseAsset) {
+			s.CS[exchange.Symbol] = Symbol{
+				Symbol:     exchange.Symbol,
+				BaseAsset:  exchange.BaseAsset,
+				QuoteAsset: exchange.QuoteAsset,
 			}
 		}
 	}
 }
 
-func (s *Symbols) findBySymbol(target string) (*Symbol, error) {
-	for _, symbol := range *s {
-		if symbol.Symbol == target {
-			return &symbol, nil
-		}
-	}
-	return &Symbol{Symbol: "", BaseAsset: "", QuoteAsset: "", BidPrice: -1, AskPrice: -1}, errors.New("target symbol not found")
-}
-
-func FindAllSymbolByAsset(s map[string]Symbol, asset string) *Symbols {
-	var symbols Symbols
-	for _, symbol := range s {
-		if symbol.BaseAsset == asset || symbol.QuoteAsset == asset {
-			symbols = append(symbols, symbol)
+func (s *SymbolsMap) FindAllSymbolByAsset(asset string) *SymbolsMap {
+	var symbols = make(SymbolsMap)
+	for k, v := range *s {
+		if v.BaseAsset == asset || v.QuoteAsset == asset {
+			symbols[k] = v
 		}
 	}
 	return &symbols
 }
 
-func (s *Symbols) findAllByAssets(asset1 string, asset2 string) *Symbols {
-	var symbols Symbols
-	for _, symbol := range *s {
-		if symbol.BaseAsset == asset1 || symbol.QuoteAsset == asset1 || symbol.BaseAsset == asset2 || symbol.QuoteAsset == asset2 {
-			symbols = append(symbols, symbol)
-		}
-	}
-	return &symbols
-}
-
-func FindByAssetPair(s *map[string]Symbol, asset1 string, asset2 string) (*Symbol, error) {
+func (s *SymbolsMap) FindByAssetPair(asset1 string, asset2 string) (*Symbol, error) {
 	for _, symbol := range *s {
 		if (symbol.BaseAsset == asset1 || symbol.QuoteAsset == asset1) && (symbol.BaseAsset == asset2 || symbol.QuoteAsset == asset2) {
 			return &symbol, nil
@@ -125,16 +76,7 @@ func FindByAssetPair(s *map[string]Symbol, asset1 string, asset2 string) (*Symbo
 	return &Symbol{}, errors.New("symbol not found")
 }
 
-func FindBookTickerByAssetPair(bookTickerMap map[string]BookTicker, asset1 string, asset2 string) (*BookTicker, error) {
-	for _, bookTicker := range bookTickerMap {
-		if (bookTicker.BaseAsset == asset1 || bookTicker.QuoteAsset == asset1) && (bookTicker.BaseAsset == asset2 || bookTicker.QuoteAsset == asset2) {
-			return &bookTicker, nil
-		}
-	}
-	return &BookTicker{}, errors.New("symbol not found")
-}
-
-func (s *Symbol) getTargetAsset(ignore string) string {
+func (s *Symbol) GetTargetAsset(ignore string) string {
 	var targetAsset2 string
 	if s.QuoteAsset != ignore {
 		targetAsset2 = s.QuoteAsset
@@ -142,16 +84,4 @@ func (s *Symbol) getTargetAsset(ignore string) string {
 		targetAsset2 = s.BaseAsset
 	}
 	return targetAsset2
-}
-
-func ConvertPrice(bookTicker *BookTicker, basePrice float64, from string, to string, addFee bool) float64 {
-	fee := .0
-	if addFee {
-		fee = constants.Fee
-	}
-	if strings.EqualFold(bookTicker.BaseAsset, from) && strings.EqualFold(bookTicker.QuoteAsset, to) { // SELL
-		return bookTicker.BidPrice * basePrice * (1 - (fee / 100))
-	} else {
-		return (1 / bookTicker.AskPrice) * basePrice * (1 - (fee / 100))
-	}
 }
