@@ -5,7 +5,6 @@ import (
 	"github.com/halm4d/arbitragecli/arb"
 	"github.com/halm4d/arbitragecli/client"
 	"github.com/halm4d/arbitragecli/constants"
-	"time"
 )
 
 func RunWebSocket() {
@@ -18,6 +17,6 @@ func RunWebSocket() {
 	fmt.Printf("Found arbs: %v\n", len(*arbs))
 
 	client.RunWebSocket(symbols, func(bt *arb.BookTickers) {
-		go arbs.Run(bt, time.Second)
+		go arbs.Run(bt)
 	})
 }

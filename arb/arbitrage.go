@@ -16,7 +16,7 @@ const (
 
 type Type int8
 
-type Arbitrages []Arbitrage
+type Arbitrages []*Arbitrage
 
 func New(symbols *Symbols) *Arbitrages {
 	var arbs = make(Arbitrages, 0)
@@ -38,9 +38,9 @@ func New(symbols *Symbols) *Arbitrages {
 	return &arbs
 }
 
-func (a *Arbitrages) Run(bt *BookTickers, d time.Duration) (profitableArbs Arbitrages, unProfitableArbs Arbitrages) {
+func (a *Arbitrages) Run(bt *BookTickers) (profitableArbs Arbitrages, unProfitableArbs Arbitrages) {
 	for {
-		time.Sleep(d)
+		time.Sleep(time.Second)
 		startOfCalculation := time.Now()
 		bt.MU.Lock()
 		var cbt = make(BookTickerMap)
@@ -60,19 +60,17 @@ func (a *Arbitrages) Run(bt *BookTickers, d time.Duration) (profitableArbs Arbit
 func logArbs(pr *Arbitrages, upr *Arbitrages, startOfCalculation time.Time) {
 	if constants.Verbose {
 		if len(*pr) > 0 {
-			log.Printf("%sCalculation time: %v ms%s %sFound profitable route: %v%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Reset, color.Green, len(*pr), color.Reset)
-			log.Printf("%sMost profitable route was:%s%s\n", color.Green, pr.GetBestRouteString(), color.Reset)
+			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Green, pr.GetBestRouteString(), color.Reset)
 			pr.Print(10)
 		} else {
-			log.Printf("%sCalculation time: %v ms%s %sProfitable route not found yet. Best possible route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Reset, color.Purple, upr.GetBestRouteString(), color.Reset)
+			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Purple, upr.GetBestRouteString(), color.Reset)
 			pr.Print(10)
 		}
 	} else {
 		if len(*pr) > 0 {
-			log.Printf("%sCalculation time: %v ms%s %sFound profitable route: %v%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Reset, color.Green, len(*pr), color.Reset)
-			log.Printf("%sMost profitable route was:%s%s\n", color.Green, pr.GetBestRouteString(), color.Reset)
+			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Green, pr.GetBestRouteString(), color.Reset)
 		} else {
-			log.Printf("%sCalculation time: %v ms%s %sProfitable route not found yet. Most profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Reset, color.Purple, upr.GetBestRouteString(), color.Reset)
+			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Purple, upr.GetBestRouteString(), color.Reset)
 		}
 	}
 }
@@ -81,14 +79,15 @@ func (a *Arbitrages) CalculateProfits(bookTickerMap *BookTickerMap, usdtBookTick
 	var wg sync.WaitGroup
 	mu := &sync.Mutex{}
 
-	profitableArbs = []Arbitrage{}
-	unProfitableArbs = []Arbitrage{}
+	profitableArbs = make(Arbitrages, 0)
+	unProfitableArbs = make(Arbitrages, 0)
 	for _, trades := range *a {
 		wg.Add(1)
-		go func(trades Arbitrage, bookTickerMap *BookTickerMap, usdtBookTicker *BookTickerMap) {
+		go func(trades *Arbitrage, bookTickerMap *BookTickerMap, usdtBookTicker *BookTickerMap) {
 			defer wg.Done()
 			trades.Profit = trades.CalculateProfit(bookTickerMap, usdtBookTicker)
-			if trades.Profit > 0 {
+			trades.ProfitPercentage = trades.Profit * (100 / constants.BasePrice)
+			if trades.ProfitPercentage > 0 {
 				mu.Lock()
 				profitableArbs = append(profitableArbs, trades)
 				mu.Unlock()
@@ -115,7 +114,7 @@ func sortArbs(profitableArbs Arbitrages, unProfitableArbs Arbitrages) {
 func sortArb(a Arbitrages, wg *sync.WaitGroup) {
 	defer wg.Done()
 	sort.Slice(a, func(i, j int) bool {
-		return a[i].Profit > a[j].Profit
+		return a[i].ProfitPercentage > a[j].ProfitPercentage
 	})
 	if len(a) > 10 {
 		a = a[:10]

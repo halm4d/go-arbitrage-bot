@@ -19,8 +19,8 @@ type Symbols struct {
 	AssetMap AssetMap
 }
 
-type AssetMap map[string][]Symbol
-type SymbolsMap map[string]Symbol
+type AssetMap map[string][]*Symbol
+type SymbolsMap map[string]*Symbol
 
 type Symbol struct {
 	Symbol     string
@@ -32,8 +32,8 @@ type Symbol struct {
 
 func NewSymbols() *Symbols {
 	return &Symbols{
-		Symbols:  make(map[string]Symbol),
-		AssetMap: make(map[string][]Symbol),
+		Symbols:  make(map[string]*Symbol),
+		AssetMap: make(map[string][]*Symbol),
 	}
 }
 
@@ -47,9 +47,9 @@ func (s *Symbols) Init(exchangeResp *ExchangeInfoResp) {
 			BaseAsset:  exchange.BaseAsset,
 			QuoteAsset: exchange.QuoteAsset,
 		}
-		s.Symbols[exchange.Symbol] = symbol
-		s.AssetMap[exchange.QuoteAsset] = append(s.AssetMap[exchange.QuoteAsset], symbol)
-		s.AssetMap[exchange.BaseAsset] = append(s.AssetMap[exchange.BaseAsset], symbol)
+		s.Symbols[exchange.Symbol] = &symbol
+		s.AssetMap[exchange.QuoteAsset] = append(s.AssetMap[exchange.QuoteAsset], &symbol)
+		s.AssetMap[exchange.BaseAsset] = append(s.AssetMap[exchange.BaseAsset], &symbol)
 	}
 }
 
@@ -67,12 +67,12 @@ func (s *Symbols) findByAssetPair(asset1 string, asset2 string) (*Symbol, error)
 	a1a2 := asset1 + asset2
 	symbols, ok := s.Symbols[a1a2]
 	if ok {
-		return &symbols, nil
+		return symbols, nil
 	}
 	a2a1 := asset2 + asset1
 	symbol, ok := s.Symbols[a2a1]
 	if ok {
-		return &symbol, nil
+		return symbol, nil
 	}
 	return &Symbol{}, errors.New("symbol not found")
 }
@@ -122,9 +122,10 @@ func (s *Symbols) calculateArbsForSymbol(startEndAsset string) *Arbitrages {
 						Symbol: pair.Symbol,
 					},
 				},
-				Profit: -math.MaxFloat64,
+				Profit:           -math.MaxFloat64,
+				ProfitPercentage: -math.MaxFloat64,
 			}
-			arbs = append(arbs, trades)
+			arbs = append(arbs, &trades)
 		}
 	}
 	return &arbs

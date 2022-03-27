@@ -30,7 +30,7 @@ func RunWebSocket(symbols *arb.Symbols, fn func(bt *arb.BookTickers)) {
 
 	signal.Notify(interrupt, os.Interrupt) // Notify the interrupt channel for SIGINT
 
-	socketUrl := "wss://stream.binance.com:9443" + "/ws/!bookTicker"
+	socketUrl := "wss://stream.binance.com:9443/ws/!bookTicker"
 	conn, _, err := websocket.DefaultDialer.Dial(socketUrl, nil)
 	if err != nil {
 		log.Fatal("Error connecting to Websocket Server:", err)
@@ -85,7 +85,6 @@ func receiveHandler(connection *websocket.Conn, symbols *arb.Symbols) {
 			os.Exit(1)
 		}
 
-		//log.Printf("Received: %+v\n", target)
 		symbol, ok := symbols.Symbols[target.S]
 		if !ok {
 			continue
@@ -96,7 +95,7 @@ func receiveHandler(connection *websocket.Conn, symbols *arb.Symbols) {
 			askPrice, _ := strconv.ParseFloat(target.A, 64)
 			askQty, _ := strconv.ParseFloat(target.A1, 64)
 			bt.MU.Lock()
-			bt.USDTBookTickers[target.S] = arb.BookTicker{
+			bt.USDTBookTickers[target.S] = &arb.BookTicker{
 				Symbol:     target.S,
 				BaseAsset:  symbol.BaseAsset,
 				QuoteAsset: symbol.QuoteAsset,
@@ -112,7 +111,7 @@ func receiveHandler(connection *websocket.Conn, symbols *arb.Symbols) {
 			askPrice, _ := strconv.ParseFloat(target.A, 64)
 			askQty, _ := strconv.ParseFloat(target.A1, 64)
 			bt.MU.Lock()
-			bt.CryptoBookTickers[target.S] = arb.BookTicker{
+			bt.CryptoBookTickers[target.S] = &arb.BookTicker{
 				Symbol:     target.S,
 				BaseAsset:  symbol.BaseAsset,
 				QuoteAsset: symbol.QuoteAsset,
@@ -122,7 +121,6 @@ func receiveHandler(connection *websocket.Conn, symbols *arb.Symbols) {
 				AskQty:     askQty,
 			}
 			bt.MU.Unlock()
-
 		}
 	}
 }
