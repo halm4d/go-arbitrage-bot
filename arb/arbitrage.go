@@ -28,9 +28,9 @@ func New(symbols *Symbols) *Arbitrages {
 		wg.Add(1)
 		go func(symbols *Symbols, startEndAsset string) {
 			defer wg.Done()
-			OneOfMyStructs := symbols.CS.calculateArbsForSymbol(startEndAsset)
+			arbitrages := symbols.calculateArbsForSymbol(startEndAsset)
 			mu.Lock()
-			arbs = append(arbs, *OneOfMyStructs...)
+			arbs = append(arbs, *arbitrages...)
 			mu.Unlock()
 		}(symbols, startEndAsset)
 	}

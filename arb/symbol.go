@@ -15,11 +15,8 @@ func AllCryptoCurrency() []string {
 }
 
 type Symbols struct {
-	CS            SymbolsMap
-	US            SymbolsMap
-	AssetMap      AssetMap
-	BaseAssetMap  AssetMap
-	QuoteAssetMap AssetMap
+	Symbols  SymbolsMap
+	AssetMap AssetMap
 }
 
 type AssetMap map[string][]Symbol
@@ -35,17 +32,14 @@ type Symbol struct {
 
 func NewSymbols() *Symbols {
 	return &Symbols{
-		US:            make(map[string]Symbol),
-		CS:            make(map[string]Symbol),
-		AssetMap:      make(map[string][]Symbol),
-		BaseAssetMap:  make(map[string][]Symbol),
-		QuoteAssetMap: make(map[string][]Symbol),
+		Symbols:  make(map[string]Symbol),
+		AssetMap: make(map[string][]Symbol),
 	}
 }
 
 func (s *Symbols) Init(exchangeResp *ExchangeInfoResp) {
 	for _, exchange := range exchangeResp.Symbols {
-		if exchange.Status != "TRADING" {
+		if exchange.Status != "TRADING" || !util.Contains(AllCryptoCurrency(), exchange.QuoteAsset) || !util.Contains(AllCryptoCurrency(), exchange.BaseAsset) {
 			continue
 		}
 		symbol := Symbol{
@@ -53,16 +47,9 @@ func (s *Symbols) Init(exchangeResp *ExchangeInfoResp) {
 			BaseAsset:  exchange.BaseAsset,
 			QuoteAsset: exchange.QuoteAsset,
 		}
-		if exchange.QuoteAsset == constants.USDT || exchange.BaseAsset == constants.USDT {
-			s.US[exchange.Symbol] = symbol
-		}
-		if util.Contains(AllCryptoCurrency(), exchange.QuoteAsset) && util.Contains(AllCryptoCurrency(), exchange.BaseAsset) {
-			s.CS[exchange.Symbol] = symbol
-		}
+		s.Symbols[exchange.Symbol] = symbol
 		s.AssetMap[exchange.QuoteAsset] = append(s.AssetMap[exchange.QuoteAsset], symbol)
 		s.AssetMap[exchange.BaseAsset] = append(s.AssetMap[exchange.BaseAsset], symbol)
-		s.QuoteAssetMap[exchange.QuoteAsset] = append(s.QuoteAssetMap[exchange.QuoteAsset], symbol)
-		s.BaseAssetMap[exchange.BaseAsset] = append(s.BaseAssetMap[exchange.BaseAsset], symbol)
 	}
 }
 
@@ -76,33 +63,36 @@ func (s *SymbolsMap) findAllSymbolByAsset(asset string) *SymbolsMap {
 	return &symbols
 }
 
-func (s *SymbolsMap) findByAssetPair(asset1 string, asset2 string) (*Symbol, error) {
-	for _, symbol := range *s {
-		if (symbol.BaseAsset == asset1 || symbol.QuoteAsset == asset1) && (symbol.BaseAsset == asset2 || symbol.QuoteAsset == asset2) {
-			return &symbol, nil
-		}
+func (s *Symbols) findByAssetPair(asset1 string, asset2 string) (*Symbol, error) {
+	a1a2 := asset1 + asset2
+	symbols, ok := s.Symbols[a1a2]
+	if ok {
+		return &symbols, nil
+	}
+	a2a1 := asset2 + asset1
+	symbol, ok := s.Symbols[a2a1]
+	if ok {
+		return &symbol, nil
 	}
 	return &Symbol{}, errors.New("symbol not found")
 }
 
 func (s *Symbol) getTargetAsset(ignore string) string {
-	var targetAsset2 string
 	if s.QuoteAsset != ignore {
-		targetAsset2 = s.QuoteAsset
+		return s.QuoteAsset
 	} else {
-		targetAsset2 = s.BaseAsset
+		return s.BaseAsset
 	}
-	return targetAsset2
 }
 
-func (s *SymbolsMap) calculateArbsForSymbol(startEndAsset string) *Arbitrages {
+func (s *Symbols) calculateArbsForSymbol(startEndAsset string) *Arbitrages {
 	var arbs Arbitrages
-	for _, asset1 := range *s.findAllSymbolByAsset(startEndAsset) {
-		var targetAsset1 = asset1.getTargetAsset(startEndAsset)
-		if asset1.BaseAsset == constants.USDT || asset1.QuoteAsset == constants.USDT {
+	for _, s1 := range s.AssetMap[startEndAsset] {
+		var targetAsset1 = s1.getTargetAsset(startEndAsset)
+		if s1.BaseAsset == constants.USDT || s1.QuoteAsset == constants.USDT {
 			continue
 		}
-		for _, asset2 := range *s.findAllSymbolByAsset(targetAsset1) {
+		for _, asset2 := range s.AssetMap[targetAsset1] {
 			if asset2.BaseAsset == constants.USDT || asset2.QuoteAsset == constants.USDT {
 				continue
 			}
@@ -119,7 +109,7 @@ func (s *SymbolsMap) calculateArbsForSymbol(startEndAsset string) *Arbitrages {
 					{
 						From:   startEndAsset,
 						To:     targetAsset1,
-						Symbol: asset1.Symbol,
+						Symbol: s1.Symbol,
 					},
 					{
 						From:   targetAsset1,

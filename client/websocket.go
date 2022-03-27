@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/halm4d/arbitragecli/arb"
+	"github.com/halm4d/arbitragecli/constants"
 	"log"
 	"os"
 	"os/signal"
@@ -85,26 +86,11 @@ func receiveHandler(connection *websocket.Conn, symbols *arb.Symbols) {
 		}
 
 		//log.Printf("Received: %+v\n", target)
-		symbol, ok := symbols.CS[target.S]
-		if ok {
-			bidPrice, _ := strconv.ParseFloat(target.B, 64)
-			bidQty, _ := strconv.ParseFloat(target.B1, 64)
-			askPrice, _ := strconv.ParseFloat(target.A, 64)
-			askQty, _ := strconv.ParseFloat(target.A1, 64)
-			bt.MU.Lock()
-			bt.CryptoBookTickers[target.S] = arb.BookTicker{
-				Symbol:     target.S,
-				BaseAsset:  symbol.BaseAsset,
-				QuoteAsset: symbol.QuoteAsset,
-				BidPrice:   bidPrice,
-				BidQty:     bidQty,
-				AskPrice:   askPrice,
-				AskQty:     askQty,
-			}
-			bt.MU.Unlock()
+		symbol, ok := symbols.Symbols[target.S]
+		if !ok {
+			continue
 		}
-		symbol, ok = symbols.US[target.S]
-		if ok {
+		if symbol.QuoteAsset == constants.USDT || symbol.BaseAsset == constants.USDT {
 			bidPrice, _ := strconv.ParseFloat(target.B, 64)
 			bidQty, _ := strconv.ParseFloat(target.B1, 64)
 			askPrice, _ := strconv.ParseFloat(target.A, 64)
@@ -120,6 +106,23 @@ func receiveHandler(connection *websocket.Conn, symbols *arb.Symbols) {
 				AskQty:     askQty,
 			}
 			bt.MU.Unlock()
+		} else {
+			bidPrice, _ := strconv.ParseFloat(target.B, 64)
+			bidQty, _ := strconv.ParseFloat(target.B1, 64)
+			askPrice, _ := strconv.ParseFloat(target.A, 64)
+			askQty, _ := strconv.ParseFloat(target.A1, 64)
+			bt.MU.Lock()
+			bt.CryptoBookTickers[target.S] = arb.BookTicker{
+				Symbol:     target.S,
+				BaseAsset:  symbol.BaseAsset,
+				QuoteAsset: symbol.QuoteAsset,
+				BidPrice:   bidPrice,
+				BidQty:     bidQty,
+				AskPrice:   askPrice,
+				AskQty:     askQty,
+			}
+			bt.MU.Unlock()
+
 		}
 	}
 }
