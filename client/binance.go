@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"github.com/halm4d/arbitragecli/arb"
 	"github.com/halm4d/arbitragecli/error"
 	"io"
 	"io/ioutil"
@@ -11,17 +12,11 @@ import (
 
 var client = &http.Client{Timeout: 10 * time.Second}
 
-func GetPrices(rc chan *[]TickerPriceResp) {
-	var target = Get[[]TickerPriceResp]("https://api.binance.com/api/v3/ticker/bookTicker")
-	rc <- &target
+func GetExchangeInfo() *arb.ExchangeInfoResp {
+	return Get[arb.ExchangeInfoResp]("https://api.binance.com/api/v3/exchangeInfo")
 }
 
-func GetExchangeInfo(rc chan *[]SymbolResp) {
-	var target = Get[ExchangeInfoResp]("https://api.binance.com/api/v3/exchangeInfo")
-	rc <- &target.Symbols
-}
-
-func Get[T any](url string) T {
+func Get[T any](url string) *T {
 	resp, err := client.Get(url)
 	if err != nil {
 		error.Fatal(err)
@@ -43,23 +38,5 @@ func Get[T any](url string) T {
 		error.Fatal(err)
 	}
 
-	return target
-}
-
-type TickerPriceResp struct {
-	Symbol string `json:"symbol"`
-	//Price    string `json:"price"`
-	AskPrice string `json:"askPrice"`
-	BidPrice string `json:"bidPrice"`
-}
-
-type SymbolResp struct {
-	Symbol     string `json:"symbol"`
-	BaseAsset  string `json:"baseAsset"`
-	QuoteAsset string `json:"quoteAsset"`
-	Status     string `json:"status"`
-}
-
-type ExchangeInfoResp struct {
-	Symbols []SymbolResp `json:"symbols"`
+	return &target
 }
