@@ -7,7 +7,7 @@ import (
 	"math"
 )
 
-type Trades struct {
+type Arbitrage struct {
 	Trades []Trade
 	Profit float64
 }
@@ -19,7 +19,7 @@ type Trade struct {
 	Type   Type
 }
 
-func (t *Trades) CalculateProfit(bookTickerMap *BookTickerMap, usdtBookTicker *BookTickerMap) float64 {
+func (t *Arbitrage) CalculateProfit(bookTickerMap *BookTickerMap, usdtBookTicker *BookTickerMap) float64 {
 	var previousPrice = constants.BasePrice
 	for i, trade := range t.Trades {
 		if i == 0 {
@@ -47,7 +47,7 @@ func (t *Trades) CalculateProfit(bookTickerMap *BookTickerMap, usdtBookTicker *B
 	return -math.MaxFloat64
 }
 
-func (t *Trades) getRouteString() string {
+func (t *Arbitrage) getRouteString() string {
 	readableTrade := ""
 	for i, trade := range t.Trades {
 		if i == 0 {
@@ -59,7 +59,7 @@ func (t *Trades) getRouteString() string {
 	return fmt.Sprintf("%s Profit: %f USD", readableTrade, t.Profit)
 }
 
-func (t *Trades) print() {
+func (t *Arbitrage) print() {
 	readableTrade := ""
 	for i, trade := range t.Trades {
 		if i == 0 {
@@ -71,21 +71,21 @@ func (t *Trades) print() {
 	log.Printf("%s Profit: %f USD\n", readableTrade, t.Profit)
 }
 
-func (r Routes) GetBestRouteString() string {
-	if len(r) == 0 {
+func (a Arbitrages) GetBestRouteString() string {
+	if len(a) == 0 {
 		return ""
 	}
-	return r[0].getRouteString()
+	return a[0].getRouteString()
 }
 
-func (r Routes) Print(top int) {
+func (a Arbitrages) Print(top int) {
 	var limit int
-	if len(r) > top {
+	if len(a) > top {
 		limit = top
 	} else {
-		limit = len(r)
+		limit = len(a)
 	}
-	for _, route := range r[:limit] {
+	for _, route := range a[:limit] {
 		route.print()
 	}
 }
