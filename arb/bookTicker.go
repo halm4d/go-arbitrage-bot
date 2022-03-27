@@ -3,7 +3,6 @@ package arb
 import (
 	"errors"
 	"github.com/halm4d/arbitragecli/constants"
-	"strings"
 	"sync"
 )
 
@@ -13,7 +12,7 @@ type BookTickers struct {
 	CryptoBookTickers BookTickerMap
 }
 
-type BookTickerMap map[string]BookTicker
+type BookTickerMap map[string]*BookTicker
 
 type BookTicker struct {
 	Symbol     string
@@ -25,11 +24,14 @@ type BookTicker struct {
 	AskQty     float64
 }
 
-func (bookTickerMap *BookTickerMap) FindBookTickerByAssetPair(asset1 string, asset2 string) (*BookTicker, error) {
-	for _, bookTicker := range *bookTickerMap {
-		if (bookTicker.BaseAsset == asset1 || bookTicker.QuoteAsset == asset1) && (bookTicker.BaseAsset == asset2 || bookTicker.QuoteAsset == asset2) {
-			return &bookTicker, nil
-		}
+func (bookTickerMap BookTickerMap) FindBookTickerByAssetPair(asset1 string, asset2 string) (*BookTicker, error) {
+	bookTicker, ok := bookTickerMap[asset1+asset2]
+	if ok {
+		return bookTicker, nil
+	}
+	bookTicker, ok = bookTickerMap[asset2+asset1]
+	if ok {
+		return bookTicker, nil
 	}
 	return &BookTicker{}, errors.New("symbol not found")
 }
@@ -39,7 +41,7 @@ func (bookTicker *BookTicker) ConvertPrice(basePrice float64, from string, to st
 	if addFee {
 		fee = constants.Fee
 	}
-	if strings.EqualFold(bookTicker.BaseAsset, from) && strings.EqualFold(bookTicker.QuoteAsset, to) { // SELL
+	if bookTicker.Symbol == from+to { // SELL
 		return bookTicker.BidPrice * basePrice * (1 - (fee / 100))
 	} else {
 		return (1 / bookTicker.AskPrice) * basePrice * (1 - (fee / 100))

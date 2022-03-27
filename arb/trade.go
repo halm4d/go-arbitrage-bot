@@ -8,8 +8,9 @@ import (
 )
 
 type Arbitrage struct {
-	Trades []Trade
-	Profit float64
+	Trades           []Trade
+	Profit           float64
+	ProfitPercentage float64
 }
 
 type Trade struct {
@@ -56,7 +57,7 @@ func (t *Arbitrage) getRouteString() string {
 			readableTrade = fmt.Sprintf("%s -> %s", readableTrade, trade.To)
 		}
 	}
-	return fmt.Sprintf("%s Profit: %f USD", readableTrade, t.Profit)
+	return fmt.Sprintf("%s Profit: %.6f%%", readableTrade, t.ProfitPercentage)
 }
 
 func (t *Arbitrage) print() {
@@ -68,7 +69,7 @@ func (t *Arbitrage) print() {
 			readableTrade = fmt.Sprintf("%s -> %s", readableTrade, trade.To)
 		}
 	}
-	log.Printf("%s Profit: %f USD\n", readableTrade, t.Profit)
+	log.Printf("%s Profit: %.6f%%\n", readableTrade, t.ProfitPercentage)
 }
 
 func (a Arbitrages) GetBestRouteString() string {
