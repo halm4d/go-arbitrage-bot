@@ -1,5 +1,13 @@
 # go-arbitrage-bot
 
+## Docker Images
+
+### Run container
+
+```
+docker run amaraa44/arbotgo:TAG
+```
+
 ## Help
 
 ```

@@ -9,10 +9,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "arbcli",
+	Use:     "arbotgo",
 	Version: "v0.0.1-alpha",
 	Run: func(cmd *cobra.Command, args []string) {
-		//app.Run()
 		app.RunWebSocket()
 	},
 }
@@ -34,8 +33,8 @@ func init() {
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version number of ArbCli",
+	Short: "Print the version number of arbotgo",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Arbitragecli  %s\n", rootCmd.Version)
+		fmt.Printf("Arbotgo version:  %s\n", rootCmd.Version)
 	},
 }
