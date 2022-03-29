@@ -18,7 +18,6 @@ jobs:
       - name: Setup Node.js and semantic-release plugins
         uses: actions/setup-node@v3
         with:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           node-version: 'lts/*'
       - run: npm install -g semantic-release @semantic-release/changelog @semantic-release/commit-analyzer @semantic-release/exec semantic-release/git semantic-release/release-notes-generator
       - name: Release
