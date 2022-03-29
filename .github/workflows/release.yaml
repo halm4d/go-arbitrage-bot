@@ -16,9 +16,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 'lts/*'
-      - name: Install plugins
-        run: npm install @semantic-release/git @semantic-release/changelog @semantic-release/exec -D
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx semantic-release
+        run: npx semantic-release @semantic-release/git @semantic-release/changelog @semantic-release/exec
