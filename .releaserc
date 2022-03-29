@@ -10,7 +10,10 @@
         "@semantic-release/commit-analyzer",
         "@semantic-release/release-notes-generator",
         ["@semantic-release/exec", {
-           "prepareCmd": "echo ${nextRelease.version} > VERSION.txt ${nextRelease.version}"
+           "prepareCmd": "echo ${nextRelease.version} > src/halm4d/VERSION ${nextRelease.version}"
+         }],
+         ["@semantic-release/git", {
+             "assets": "src/halm4d/VERSION"
          }],
         "@semantic-release/github"
     ]
