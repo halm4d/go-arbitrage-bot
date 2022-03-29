@@ -15,7 +15,7 @@ plugins:
     - changelogFile: CHANGELOG.md
       changelogTitle: '# Semantic Versioning Changelog'
   - - '@semantic-release/exec'
-    - prepareCmd: echo HELLO && echo  ${nextRelease.version} > src/.version
+    - prepareCmd: echo  ${nextRelease.version} > src/.version
   - - '@semantic-release/git'
     - assets:
         - CHANGELOG.md
