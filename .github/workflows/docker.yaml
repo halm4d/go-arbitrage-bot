@@ -3,7 +3,7 @@ name: Docker CI
 on:
   push:
     tags:
-      - '*'
+      - *
 
 env:
   GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
