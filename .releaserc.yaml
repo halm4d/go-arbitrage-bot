@@ -1,0 +1,14 @@
+branches:
+  - name: main
+  - name: beta
+    prerelease: true
+  - name: alpha
+    prerelease: true
+release:
+  prepare:
+    - path: "@semantic-release/exec"
+      cmd: "echo ${nextRelease.version} > VERSION.txt ${nextRelease.version}"
+plugins:
+  - "@semantic-release/commit-analyzer"
+  - "@semantic-release/release-notes-generator"
+  - "@semantic-release/github"
