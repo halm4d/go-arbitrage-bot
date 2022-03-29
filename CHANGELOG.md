@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+## [0.0.23](https://github.com/halm4d/go-arbitrage-bot/compare/v0.0.22...v0.0.23) (2022-03-29)
+
+
+### Bug Fixes
+
+* try to trigger docker workflow ([63f08a5](https://github.com/halm4d/go-arbitrage-bot/commit/63f08a5ff2014e7bc84c37ae93e5afeddc08a062))
+
 ## [0.0.22](https://github.com/halm4d/go-arbitrage-bot/compare/v0.0.21...v0.0.22) (2022-03-29)
 
 
