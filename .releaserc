@@ -14,7 +14,7 @@
             "changelogTitle": "# Semantic Versioning Changelog"
         }],
         ["@semantic-release/exec", {
-           "prepareCmd": "echo  ${nextRelease.version} > .version"
+           "successCmd": "echo  ${nextRelease.version} > .version"
          }],
          ["@semantic-release/git", {
              "assets": "CHANGELOG.md"
