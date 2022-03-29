@@ -13,22 +13,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
       - name: Setup Node.js and semantic-release plugins
         uses: actions/setup-node@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           node-version: 'lts/*'
       - run: npm install -g semantic-release @semantic-release/changelog @semantic-release/commit-analyzer @semantic-release/exec semantic-release/git semantic-release/release-notes-generator
       - name: Release
         with:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npx semantic-release
