@@ -1,0 +1,21 @@
+branches:
+  - name: main
+  - name: beta
+    preRelease: true
+  - name: alpha
+    preRelease: true
+release:
+  prepare:
+    - path: '@semantic-release/exec'
+      cmd: echo ${nextRelease.version} > VERSION.txt ${nextRelease.version}
+plugins:
+  - '@semantic-release/commit-analyzer'
+  - '@semantic-release/release-notes-generator'
+  - - '@semantic-release/changelog'
+    - changelogFile: CHANGELOG.md
+      changelogTitle: '# Semantic Versioning Changelog'
+  - - '@semantic-release/exec'
+    - verifyReleaseCmd: echo  ${nextRelease.version} > .version
+  - - '@semantic-release/git'
+    - assets: CHANGELOG.md
+  - '@semantic-release/github'
