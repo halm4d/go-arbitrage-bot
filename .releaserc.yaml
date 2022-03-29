@@ -17,5 +17,7 @@ plugins:
   - - '@semantic-release/exec'
     - verifyReleaseCmd: echo HELLO && echo  ${nextRelease.version} > .version
   - - '@semantic-release/git'
-    - assets: CHANGELOG.md
+    - assets:
+        - CHANGELOG.md
+        - .version
   - '@semantic-release/github'
