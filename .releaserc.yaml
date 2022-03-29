@@ -15,9 +15,9 @@ plugins:
     - changelogFile: CHANGELOG.md
       changelogTitle: '# Semantic Versioning Changelog'
   - - '@semantic-release/exec'
-    - verifyReleaseCmd: echo HELLO && echo  ${nextRelease.version} > .version
+    - verifyReleaseCmd: echo HELLO && echo  ${nextRelease.version} > src/.version
   - - '@semantic-release/git'
     - assets:
         - CHANGELOG.md
-        - .version
+        - src/.version
   - '@semantic-release/github'
