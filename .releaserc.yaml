@@ -20,4 +20,6 @@ plugins:
     - assets:
         - CHANGELOG.md
         - src/.version
+        - bin/arbotgo
+        - bin/arbotgo.exe
   - '@semantic-release/github'
