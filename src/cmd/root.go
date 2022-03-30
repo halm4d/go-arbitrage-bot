@@ -5,17 +5,18 @@ import (
 	"github.com/halm4d/arbitragecli/app"
 	"github.com/halm4d/arbitragecli/constants"
 	"github.com/spf13/cobra"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 )
 
 func readVersion() string {
-	abs, err := filepath.Abs("../.version")
+	abs, err := filepath.Abs("src/.version")
 	if err != nil {
 		log.Fatalf("Cannot find absolute path of version file. %s", err)
 	}
-	version, err := os.ReadFile(abs)
+	version, err := ioutil.ReadFile(abs)
 	if err != nil {
 		log.Fatalf("Cannot read version file. %s", err)
 	}
