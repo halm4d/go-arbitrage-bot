@@ -8,7 +8,7 @@ RUN mkdir -p $APP_HOME && chown -R $APP_USER:$APP_USER $APP_HOME
 
 WORKDIR $APP_HOME
 USER $APP_USER
-COPY src/ .
+COPY . .
 
 RUN go mod download
 RUN go mod verify
