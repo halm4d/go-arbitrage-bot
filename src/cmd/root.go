@@ -5,12 +5,21 @@ import (
 	"github.com/halm4d/arbitragecli/app"
 	"github.com/halm4d/arbitragecli/constants"
 	"github.com/spf13/cobra"
+	"log"
 	"os"
 )
 
+func readVersion() string {
+	var version, err = os.ReadFile("src/.version")
+	if err != nil {
+		log.Fatalf("Cannot read version file. %s", err)
+	}
+	return string(version)
+}
+
 var rootCmd = &cobra.Command{
 	Use:     "arbotgo",
-	Version: "v0.0.1-alpha",
+	Version: readVersion(),
 	Run: func(cmd *cobra.Command, args []string) {
 		app.RunWebSocket()
 	},
