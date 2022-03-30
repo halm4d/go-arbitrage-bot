@@ -2,9 +2,9 @@ package app
 
 import (
 	"fmt"
-	"github.com/halm4d/arbitragecli/arb"
-	"github.com/halm4d/arbitragecli/client"
-	"github.com/halm4d/arbitragecli/constants"
+	"github.com/halm4d/go-arbitrage-bot/src/arb"
+	"github.com/halm4d/go-arbitrage-bot/src/client"
+	"github.com/halm4d/go-arbitrage-bot/src/constants"
 )
 
 func RunWebSocket() {

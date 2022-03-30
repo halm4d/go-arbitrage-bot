@@ -2,8 +2,8 @@ package client
 
 import (
 	"encoding/json"
-	"github.com/halm4d/arbitragecli/arb"
-	"github.com/halm4d/arbitragecli/error"
+	"github.com/halm4d/go-arbitrage-bot/src/arb"
+	"github.com/halm4d/go-arbitrage-bot/src/error"
 	"io"
 	"io/ioutil"
 	"net/http"

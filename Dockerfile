@@ -1,15 +1,14 @@
 FROM golang:1.18 as builder
 
-ENV APP_USER app
-ENV APP_HOME /arbotgo
+ENV APP_HOME /go/src/go-arbitrage-bot
+ENV APP_HOME_SRC /go/src/go-arbitrage-bot/src
 
-RUN groupadd $APP_USER && useradd -m -g $APP_USER -l $APP_USER
-RUN mkdir -p $APP_HOME && chown -R $APP_USER:$APP_USER $APP_HOME
+RUN mkdir -p $APP_HOME
 
 WORKDIR $APP_HOME
-USER $APP_USER
 COPY . .
 
+WORKDIR $APP_HOME_SRC
 RUN go mod download
 RUN go mod verify
 RUN go build -o arbotgo
@@ -17,13 +16,15 @@ RUN go build -o arbotgo
 FROM golang:1.18
 
 ENV APP_USER app
-ENV APP_HOME /arbotgo
+ENV APP_HOME /go/src/go-arbitrage-bot
+ENV APP_HOME_SRC /go/src/go-arbitrage-bot/src
 
 RUN groupadd $APP_USER && useradd -m -g $APP_USER -l $APP_USER
 RUN mkdir -p $APP_HOME
 WORKDIR $APP_HOME
 
-COPY --chown=0:0 --from=builder $APP_HOME/arbotgo $APP_HOME
+COPY --chown=0:0 --from=builder $APP_HOME_SRC/arbotgo $APP_HOME/arbotgo
+COPY --chown=0:0 --from=builder $APP_HOME_SRC/.version $APP_HOME_SRC/.version
 
 USER $APP_USER
 ENTRYPOINT ["./arbotgo"]

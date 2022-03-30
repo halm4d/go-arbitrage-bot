@@ -1,8 +1,8 @@
 package arb
 
 import (
-	"github.com/halm4d/arbitragecli/color"
-	"github.com/halm4d/arbitragecli/constants"
+	"github.com/halm4d/go-arbitrage-bot/src/color"
+	"github.com/halm4d/go-arbitrage-bot/src/constants"
 	"log"
 	"sort"
 	"sync"

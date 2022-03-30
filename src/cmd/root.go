@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/halm4d/arbitragecli/app"
-	"github.com/halm4d/arbitragecli/constants"
+	"github.com/halm4d/go-arbitrage-bot/src/app"
+	"github.com/halm4d/go-arbitrage-bot/src/constants"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"log"

@@ -2,7 +2,7 @@ package arb
 
 import (
 	"errors"
-	"github.com/halm4d/arbitragecli/constants"
+	"github.com/halm4d/go-arbitrage-bot/src/constants"
 	"sync"
 )
 

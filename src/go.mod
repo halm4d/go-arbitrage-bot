@@ -1,4 +1,4 @@
-module github.com/halm4d/arbitragecli
+module github.com/halm4d/go-arbitrage-bot/src
 
 go 1.18
 

@@ -2,7 +2,7 @@ package arb
 
 import (
 	"fmt"
-	"github.com/halm4d/arbitragecli/constants"
+	"github.com/halm4d/go-arbitrage-bot/src/constants"
 	"log"
 	"math"
 )
