@@ -1,9 +1,8 @@
 name: Docker CI
 
 on:
-  push:
-    tags:
-      - v*.*.*
+  release:
+    types: [ published ]
 
 env:
   GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
