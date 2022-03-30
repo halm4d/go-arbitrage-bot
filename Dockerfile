@@ -17,7 +17,7 @@ RUN go build -o arbotgo
 FROM golang:1.18
 
 ENV APP_USER app
-ENV APP_HOME /go/src/arbotgo
+ENV APP_HOME /arbotgo
 
 RUN groupadd $APP_USER && useradd -m -g $APP_USER -l $APP_USER
 RUN mkdir -p $APP_HOME
