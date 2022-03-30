@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+## [0.0.33](https://github.com/halm4d/go-arbitrage-bot/compare/v0.0.32...v0.0.33) (2022-03-30)
+
+
+### Bug Fixes
+
+* try to trigger docker ci on auto created release ([e39c202](https://github.com/halm4d/go-arbitrage-bot/commit/e39c20250b3214dfdd1a4c67186b1fd235ccd5a1))
+
 ## [0.0.32](https://github.com/halm4d/go-arbitrage-bot/compare/v0.0.31...v0.0.32) (2022-03-29)
 
 
