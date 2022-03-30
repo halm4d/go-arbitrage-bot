@@ -7,10 +7,15 @@ import (
 	"github.com/spf13/cobra"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 func readVersion() string {
-	var version, err = os.ReadFile("src/.version")
+	abs, err := filepath.Abs("../.version")
+	if err != nil {
+		log.Fatalf("Cannot find absolute path of version file. %s", err)
+	}
+	version, err := os.ReadFile(abs)
 	if err != nil {
 		log.Fatalf("Cannot read version file. %s", err)
 	}
