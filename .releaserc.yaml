@@ -4,10 +4,6 @@ branches:
     preRelease: true
   - name: alpha
     preRelease: true
-release:
-  prepare:
-    - path: '@semantic-release/exec'
-      cmd: echo ${nextRelease.version} > VERSION.txt ${nextRelease.version}
 plugins:
   - '@semantic-release/commit-analyzer'
   - '@semantic-release/release-notes-generator'
@@ -20,6 +16,7 @@ plugins:
     - assets:
         - CHANGELOG.md
         - src/.version
-        - bin/arbotgo
+        - bin/arbotgo-linux
         - bin/arbotgo.exe
+        - bin/arbotgo-darwin
   - '@semantic-release/github'
