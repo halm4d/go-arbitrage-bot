@@ -24,10 +24,11 @@ jobs:
         with:
           go-version: 1.18
       - run: |
-          cd $PWD/src && go mod download
-          cd $PWD/src && go mod verify
-          cd $PWD/src && GOOS=linux && go build -o $PWD/bin/arbotgo
-          cd $PWD/src && GOOS=windows && go build -o $PWD/bin/arbotogo.exe
+          ls -la
+          go mod download
+          go mod verify
+          GOOS=linux && go build -o $PWD/bin/arbotgo
+          GOOS=windows && go build -o $PWD/bin/arbotogo.exe
       - name: Setup Node.js and semantic-release plugins
         uses: actions/setup-node@v3
         with:
