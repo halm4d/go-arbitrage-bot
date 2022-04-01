@@ -1,5 +1,22 @@
 # Semantic Versioning Changelog
 
+## [0.0.40](https://github.com/halm4d/go-arbitrage-bot/compare/v0.0.39...v0.0.40) (2022-04-01)
+
+
+### Bug Fixes
+
+* build on release and add to assets ([be92c51](https://github.com/halm4d/go-arbitrage-bot/commit/be92c51f9163a8cc6b1f98363ed7633a593f5812))
+* build on release and add to assets ([ad2a0d3](https://github.com/halm4d/go-arbitrage-bot/commit/ad2a0d36fb00ec46ce8f2e0236fecba0e201b293))
+* build on release and add to assets ([d775900](https://github.com/halm4d/go-arbitrage-bot/commit/d77590030a44eaed6003eb46df8ac0f19536c544))
+* build on release and add to assets ([d9d0049](https://github.com/halm4d/go-arbitrage-bot/commit/d9d00492c17c55fb534fa08c08cc740c9155f7c5))
+* go build and add to release assets ([deef0d1](https://github.com/halm4d/go-arbitrage-bot/commit/deef0d1eba446ef4d5147f50216fefc530059ca8))
+* go build and add to release assets ([df96ccc](https://github.com/halm4d/go-arbitrage-bot/commit/df96cccfec6f07b827d354a486e3bcda229978a5))
+* go build and add to release assets ([37b4909](https://github.com/halm4d/go-arbitrage-bot/commit/37b49093ff0d65396a2c4c7a415e45beccfdbf54))
+* go build and add to release assets ([e2d9959](https://github.com/halm4d/go-arbitrage-bot/commit/e2d9959dfa82c7cf7eaee41cbdf6baf60b77ef89))
+* go build and add to release assets ([80ac29c](https://github.com/halm4d/go-arbitrage-bot/commit/80ac29cec6a336da908bdee1460f29342bcf441e))
+* go build and add to release assets ([db54dc3](https://github.com/halm4d/go-arbitrage-bot/commit/db54dc3b7d584e14b70ecc66a077f8f18393e6d5))
+* go build and add to release assets ([3658628](https://github.com/halm4d/go-arbitrage-bot/commit/36586283b7d53f59ce96336429e57324dd6c27a2))
+
 ## [0.0.39](https://github.com/halm4d/go-arbitrage-bot/compare/v0.0.38...v0.0.39) (2022-03-30)
 
 
