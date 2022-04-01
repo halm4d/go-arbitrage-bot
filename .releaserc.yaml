@@ -17,10 +17,10 @@ plugins:
         - CHANGELOG.md
         - src/.version
   - '@semantic-release/github'
-    - assets:
-        - path: bin/arbotgo-linux
-          label: arbotgo linux
-        - path: bin/arbotgo.exe
-          label: arbotgo windows
-        - path: bin/arbotgo-darwin
-          label: arbotgo darwin
+  - assets:
+      - path: bin/arbotgo-linux
+        label: arbotgo linux
+      - path: bin/arbotgo.exe
+        label: arbotgo windows
+      - path: bin/arbotgo-darwin
+        label: arbotgo darwin
