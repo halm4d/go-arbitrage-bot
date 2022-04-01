@@ -1,5 +1,13 @@
 # Semantic Versioning Changelog
 
+## [0.0.43](https://github.com/halm4d/go-arbitrage-bot/compare/v0.0.42...v0.0.43) (2022-04-01)
+
+
+### Bug Fixes
+
+* build on release and add to assets ([bd6e58b](https://github.com/halm4d/go-arbitrage-bot/commit/bd6e58b5b3df2c8f61bc605fdd501b937497ac1a))
+* build on release and add to assets ([6907524](https://github.com/halm4d/go-arbitrage-bot/commit/6907524357fe908e902c5ec9a1236f7a67676303))
+
 ## [0.0.42](https://github.com/halm4d/go-arbitrage-bot/compare/v0.0.41...v0.0.42) (2022-04-01)
 
 
