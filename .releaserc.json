@@ -1,0 +1,49 @@
+{
+  "branches": [
+    {
+      "name": "main"
+    },
+    {
+      "name": "beta",
+      "preRelease": true
+    },
+    {
+      "name": "alpha",
+      "preRelease": true
+    }
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md",
+        "changelogTitle": "# Semantic Versioning Changelog"
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "echo  ${nextRelease.version} > src/.version"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "CHANGELOG.md",
+          "src/.version"
+        ]
+      }
+    ],
+    "@semantic-release/github",
+    {
+      "assets": [
+        "bin/arbotgo-linux",
+        "bin/arbotgo.exe",
+        "bin/arbotgo-darwin"
+      ]
+    }
+  ]
+}
