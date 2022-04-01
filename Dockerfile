@@ -22,8 +22,8 @@ RUN groupadd $APP_USER && useradd -m -g $APP_USER -l $APP_USER
 RUN mkdir -p APP_HOME_SRC
 WORKDIR $APP_HOME_SRC
 
-COPY --chown=0:0 --from=builder ./arbotgo ./arbotgo
-COPY --chown=0:0 --from=builder ./.version ./.version
+COPY --chown=0:0 --from=builder arbotgo arbotgo
+COPY --chown=0:0 --from=builder .version .version
 
 USER $APP_USER
 ENTRYPOINT ["./arbotgo"]
