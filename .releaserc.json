@@ -43,15 +43,15 @@
         "assets": [
           {
             "path": "bin/arbotgo-linux",
-            "label": "arbotgo linux"
+            "label": "arbotgo-linux"
           },
           {
             "path": "bin/arbotgo.exe",
-            "label": "arbotgo windows"
+            "label": "arbotgo.exe"
           },
           {
             "path": "bin/arbotgo-darwin",
-            "label": "arbotgo darwin"
+            "label": "arbotgo-darwin"
           }
         ]
       }
