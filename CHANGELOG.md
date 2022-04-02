@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+# [1.1.0](https://github.com/halm4d/go-arbitrage-bot/compare/v1.0.0...v1.1.0) (2022-04-02)
+
+
+### Features
+
+* basic termUI ([47d6c43](https://github.com/halm4d/go-arbitrage-bot/commit/47d6c43f5c1c7434252af7320935dfab8480c44c))
+
 # 1.0.0 (2022-04-02)
 
 
