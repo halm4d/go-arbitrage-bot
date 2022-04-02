@@ -23,12 +23,6 @@
       }
     ],
     [
-      "@semantic-release/exec",
-      {
-        "prepareCmd": "echo 'package cmd\n\nconst version = \"${nextRelease.version}\"' > src/cmd/version.go"
-      }
-    ],
-    [
       "@semantic-release/git",
       {
         "assets": [

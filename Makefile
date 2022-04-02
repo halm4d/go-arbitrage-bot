@@ -4,6 +4,7 @@ mod:
 test:
 	cd src && go test
 build: mod test
+	echo "package cmd\n\nconst version = \"$(TAG)\"" > src/cmd/version.go
 	cd src && GOOS=linux GOARCH=amd64 go build -o ../bin/arbotgo-linux
 	cd src && GOOS=windows GOARCH=amd64 go build -o ../bin/arbotgo.exe
 	cd src && GOOS=darwin GOARCH=amd64 go build -o ../bin/arbotgo-darwin
