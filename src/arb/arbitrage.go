@@ -38,7 +38,7 @@ func New(symbols *Symbols) *Arbitrages {
 	return &arbs
 }
 
-func (a *Arbitrages) Run(bt *BookTickers) (profitableArbs Arbitrages, unProfitableArbs Arbitrages) {
+func (a *Arbitrages) Run(bt *BookTickers) (profitableArbs Arbitrages) {
 	for {
 		time.Sleep(time.Second)
 		startOfCalculation := time.Now()
@@ -52,62 +52,55 @@ func (a *Arbitrages) Run(bt *BookTickers) (profitableArbs Arbitrages, unProfitab
 			ubt[key] = value
 		}
 		bt.MU.Unlock()
-		profitableArbs, unProfitableArbs = a.CalculateProfits(&cbt, &ubt)
-		logArbs(&profitableArbs, &unProfitableArbs, startOfCalculation)
+		profitableArbs = a.CalculateProfits(&cbt, &ubt)
+		logArbs(&profitableArbs, startOfCalculation)
 	}
 }
 
-func logArbs(pr *Arbitrages, upr *Arbitrages, startOfCalculation time.Time) {
+func logArbs(pr *Arbitrages, startOfCalculation time.Time) {
+	bestRoute := pr.GetBestRoute()
 	if constants.Verbose {
-		if len(*pr) > 0 {
-			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Green, pr.GetBestRouteString(), color.Reset)
+		if bestRoute.ProfitPercentage > 0 {
+			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Green, bestRoute.GetRouteString(), color.Reset)
 			pr.Print(10)
 		} else {
-			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Purple, upr.GetBestRouteString(), color.Reset)
+			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Purple, bestRoute.GetRouteString(), color.Reset)
 			pr.Print(10)
 		}
 	} else {
-		if len(*pr) > 0 {
-			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Green, pr.GetBestRouteString(), color.Reset)
+		if bestRoute.ProfitPercentage > 0 {
+			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Green, bestRoute.GetRouteString(), color.Reset)
 		} else {
-			log.Printf("%sCalculation time: %vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Purple, upr.GetBestRouteString(), color.Reset)
+			log.Printf("%sCalculation time: %-3vms %sMost profitable route was:%s%s\n", color.Cyan, time.Now().UnixMilli()-startOfCalculation.UnixMilli(), color.Purple, bestRoute.GetRouteString(), color.Reset)
 		}
 	}
 }
 
-func (a *Arbitrages) CalculateProfits(bookTickerMap *BookTickerMap, usdtBookTicker *BookTickerMap) (profitableArbs Arbitrages, unProfitableArbs Arbitrages) {
+func (a *Arbitrages) CalculateProfits(bookTickerMap *BookTickerMap, usdtBookTicker *BookTickerMap) (profitableArbs Arbitrages) {
 	var wg sync.WaitGroup
 	mu := &sync.Mutex{}
 
 	profitableArbs = make(Arbitrages, 0)
-	unProfitableArbs = make(Arbitrages, 0)
 	for _, trades := range *a {
 		wg.Add(1)
 		go func(trades *Arbitrage, bookTickerMap *BookTickerMap, usdtBookTicker *BookTickerMap) {
 			defer wg.Done()
 			trades.Profit = trades.CalculateProfit(bookTickerMap, usdtBookTicker)
 			trades.ProfitPercentage = trades.Profit * (100 / constants.BasePrice)
-			if trades.ProfitPercentage > 0 {
-				mu.Lock()
-				profitableArbs = append(profitableArbs, trades)
-				mu.Unlock()
-			} else {
-				mu.Lock()
-				unProfitableArbs = append(unProfitableArbs, trades)
-				mu.Unlock()
-			}
+			mu.Lock()
+			profitableArbs = append(profitableArbs, trades)
+			mu.Unlock()
 		}(trades, bookTickerMap, usdtBookTicker)
 	}
 	wg.Wait()
-	sortArbs(profitableArbs, unProfitableArbs)
-	return profitableArbs, unProfitableArbs
+	sortArbs(profitableArbs)
+	return profitableArbs
 }
 
-func sortArbs(profitableArbs Arbitrages, unProfitableArbs Arbitrages) {
+func sortArbs(profitableArbs Arbitrages) {
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(1)
 	go sortArb(profitableArbs, &wg)
-	go sortArb(unProfitableArbs, &wg)
 	wg.Wait()
 }
 

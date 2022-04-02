@@ -48,16 +48,16 @@ func (t *Arbitrage) CalculateProfit(bookTickerMap *BookTickerMap, usdtBookTicker
 	return -math.MaxFloat64
 }
 
-func (t *Arbitrage) getRouteString() string {
+func (t *Arbitrage) GetRouteString() string {
 	readableTrade := ""
 	for i, trade := range t.Trades {
 		if i == 0 {
-			readableTrade = fmt.Sprintf("%s %s -> %s", readableTrade, trade.From, trade.To)
+			readableTrade = fmt.Sprintf("%s %-5s -> %-5s", readableTrade, trade.From, trade.To)
 		} else {
-			readableTrade = fmt.Sprintf("%s -> %s", readableTrade, trade.To)
+			readableTrade = fmt.Sprintf("%s -> %-5s", readableTrade, trade.To)
 		}
 	}
-	return fmt.Sprintf("%s Profit: %.6f%%", readableTrade, t.ProfitPercentage)
+	return fmt.Sprintf("%s   Profit: %.6f%%", readableTrade, t.ProfitPercentage)
 }
 
 func (t *Arbitrage) print() {
@@ -72,11 +72,15 @@ func (t *Arbitrage) print() {
 	log.Printf("%s Profit: %.6f%%\n", readableTrade, t.ProfitPercentage)
 }
 
-func (a Arbitrages) GetBestRouteString() string {
+func (a Arbitrages) GetBestRoute() *Arbitrage {
 	if len(a) == 0 {
-		return ""
+		return nil
 	}
-	return a[0].getRouteString()
+	return a[0]
+}
+
+func (a Arbitrages) GetBestRouteString() string {
+	return a.GetBestRoute().GetRouteString()
 }
 
 func (a Arbitrages) Print(top int) {
