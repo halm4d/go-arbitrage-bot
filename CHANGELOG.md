@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+## [0.0.52](https://github.com/halm4d/go-arbitrage-bot/compare/v0.0.51...v0.0.52) (2022-04-02)
+
+
+### Bug Fixes
+
+* refact Makefile ([3243744](https://github.com/halm4d/go-arbitrage-bot/commit/3243744cc425adbcb3b72dbf160fe83ab3805ef1))
+
 ## [0.0.51](https://github.com/halm4d/go-arbitrage-bot/compare/v0.0.50...v0.0.51) (2022-04-01)
 
 
