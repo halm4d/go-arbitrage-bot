@@ -27,7 +27,7 @@
       {
         "assets": [
           "CHANGELOG.md",
-          "src/cmd/version.go"
+          "src/constants/version.go"
         ]
       }
     ],
