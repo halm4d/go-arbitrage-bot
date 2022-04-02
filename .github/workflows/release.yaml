@@ -23,12 +23,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 'lts/*'
-      - run: npm install -g semantic-release @semantic-release/changelog @semantic-release/commit-analyzer @semantic-release/exec @semantic-release/git @semantic-release/release-notes-generator
-      - name: Build
+      - name: Setup Go
         uses: actions/setup-go@v3
         with:
           go-version: 1.18
-      - run: |
+      - name: Install semantic-release plugins
+        run: npm install -g semantic-release @semantic-release/changelog @semantic-release/commit-analyzer @semantic-release/exec @semantic-release/git @semantic-release/release-notes-generator
+      - name: Build with version
+        run: |
           export NEXT_VERSION=$(npx semantic-release --dry-run | grep 'The next release version is' | sed -E 's/.* ([[:digit:].]+)$/\1/')
           echo Next version is $NEXT_VERSION
           make build TAG = $NEXT_VERSION
