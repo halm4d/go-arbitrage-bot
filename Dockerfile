@@ -3,7 +3,7 @@ FROM golang:1.18 as builder
 ENV APP_HOME_SRC /go/src/go-arbitrage-bot/src
 RUN mkdir -p $APP_HOME_SRC
 WORKDIR $APP_HOME_SRC
-COPY . .
+COPY ./src .
 
 RUN go mod download
 RUN go mod verify
