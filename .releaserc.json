@@ -25,7 +25,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "echo package cmd\n\n const=\"${nextRelease.version}\"\n > src/cmd/version.go"
+        "prepareCmd": "echo 'package cmd\n\n const=\"${nextRelease.version}\"\n' > src/cmd/version.go"
       }
     ],
     [
