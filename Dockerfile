@@ -13,6 +13,7 @@ FROM golang:1.18
 
 ENV APP_USER app
 ENV APP_HOME_SRC /go/src/go-arbitrage-bot/src
+ENV TERM xterm-256color
 
 RUN groupadd $APP_USER && useradd -m -g $APP_USER -l $APP_USER
 RUN mkdir -p APP_HOME_SRC
