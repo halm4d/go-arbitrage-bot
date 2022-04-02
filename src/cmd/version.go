@@ -1,3 +1,3 @@
 package cmd
 
-const version = "alpha"
+const version = "0.0.54"
