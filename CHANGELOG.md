@@ -1,5 +1,12 @@
 # Semantic Versioning Changelog
 
+## [1.1.1](https://github.com/halm4d/go-arbitrage-bot/compare/v1.1.0...v1.1.1) (2022-04-02)
+
+
+### Bug Fixes
+
+* docker terminal color ([ae9e79e](https://github.com/halm4d/go-arbitrage-bot/commit/ae9e79e1c7e4b89d2779eed9f265340edaf413bd))
+
 # [1.1.0](https://github.com/halm4d/go-arbitrage-bot/compare/v1.0.0...v1.1.0) (2022-04-02)
 
 
