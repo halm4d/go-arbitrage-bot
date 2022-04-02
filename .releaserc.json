@@ -25,7 +25,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "echo  ${nextRelease.version} > src/.version"
+        "prepareCmd": "echo package cmd\n\n const=\"${nextRelease.version}\"\n > src/cmd/version.go"
       }
     ],
     [
@@ -33,7 +33,7 @@
       {
         "assets": [
           "CHANGELOG.md",
-          "src/.version"
+          "src/cmd/version.go"
         ]
       }
     ],

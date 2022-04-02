@@ -2,30 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	ui "github.com/gizak/termui/v3"
+	"github.com/gizak/termui/v3/widgets"
 	"github.com/halm4d/go-arbitrage-bot/src/app"
 	"github.com/halm4d/go-arbitrage-bot/src/constants"
 	"github.com/spf13/cobra"
-	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
 )
-
-func readVersion() string {
-	abs, err := filepath.Abs("src/.version")
-	if err != nil {
-		log.Fatalf("Cannot find absolute path of version file. %s", err)
-	}
-	version, err := ioutil.ReadFile(abs)
-	if err != nil {
-		log.Fatalf("Cannot read version file. %s", err)
-	}
-	return string(version)
-}
 
 var rootCmd = &cobra.Command{
 	Use:     "arbotgo",
-	Version: readVersion(),
+	Version: version,
 	Run: func(cmd *cobra.Command, args []string) {
 		app.RunWebSocket()
 	},
@@ -40,10 +28,34 @@ func Execute() {
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(termUI)
 	rootCmd.PersistentFlags().BoolVarP(&constants.Verbose, "verbose", "v", false, "verbose output")
 	//rootCmd.PersistentFlags().BoolVarP(&constants.ShowOnlyProfitableArbs, "only-profitable", "p", false, "show only profitable arbitrages")
 	rootCmd.PersistentFlags().Float64VarP(&constants.Fee, "fee", "f", .075, "fee")
 	rootCmd.PersistentFlags().Float64VarP(&constants.BasePrice, "base-price", "b", 100, "base price")
+}
+
+var termUI = &cobra.Command{
+	Use:   "termui",
+	Short: "Run in terminal ui",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ui.Init(); err != nil {
+			log.Fatalf("failed to initialize termui: %v", err)
+		}
+		defer ui.Close()
+
+		p := widgets.NewParagraph()
+		p.Text = "Hello World!"
+		p.SetRect(0, 0, 25, 5)
+
+		ui.Render(p)
+
+		for e := range ui.PollEvents() {
+			if e.Type == ui.KeyboardEvent {
+				break
+			}
+		}
+	},
 }
 
 var versionCmd = &cobra.Command{
