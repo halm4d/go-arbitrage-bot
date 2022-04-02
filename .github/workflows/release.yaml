@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - name: Setup Node.js and semantic-release plugins
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 'lts/*'

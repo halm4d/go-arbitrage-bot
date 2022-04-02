@@ -23,7 +23,6 @@ RUN mkdir -p APP_HOME_SRC
 WORKDIR $APP_HOME_SRC
 
 COPY --chown=0:0 --from=builder $APP_HOME_SRC/arbotgo arbotgo
-COPY --chown=0:0 --from=builder $APP_HOME_SRC/.version .version
 
 USER $APP_USER
 ENTRYPOINT ["./arbotgo"]
