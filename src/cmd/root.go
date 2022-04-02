@@ -13,7 +13,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:     "arbotgo",
-	Version: version,
+	Version: constants.Version,
 	Run: func(cmd *cobra.Command, args []string) {
 		app.RunWebSocket()
 	},
