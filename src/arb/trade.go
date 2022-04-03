@@ -20,6 +20,24 @@ type Trade struct {
 	Type   Type
 }
 
+func (t Arbitrage) Compare(c Arbitrage) bool {
+	for i := range t.Trades {
+		if c.Trades[i] != t.Trades[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (t Arbitrage) CompareList(c Arbitrages) bool {
+	for i := range c {
+		if c[i].Compare(t) {
+			return true
+		}
+	}
+	return false
+}
+
 func (t *Arbitrage) CalculateProfit(bookTickerMap *BookTickerMap, usdtBookTicker *BookTickerMap) float64 {
 	var previousPrice = constants.BasePrice
 	for i, trade := range t.Trades {
@@ -77,6 +95,19 @@ func (a Arbitrages) GetBestRoute() *Arbitrage {
 		return nil
 	}
 	return a[0]
+}
+
+func (a Arbitrages) GetBestRoutes(top int) Arbitrages {
+	if len(a) == 0 {
+		return nil
+	}
+	var limit int
+	if len(a) > top {
+		limit = top
+	} else {
+		limit = len(a)
+	}
+	return a[:limit]
 }
 
 func (a Arbitrages) GetBestRouteString() string {
